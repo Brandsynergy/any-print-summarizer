@@ -227,19 +227,65 @@ export default function HomePage() {
       // Step 3: Smart Analysis - Check if this is a book cover
       updateStepStatus('analyze', 'active');
       
+      console.log('=== BOOK DETECTION DEBUG ===');
+      console.log('OCR Text (first 500 chars):', text.substring(0, 500));
+      console.log('OCR Text lines:', text.split('\n').filter(line => line.trim()));
+      
       const bookDetection = detectBookCover(text);
-      console.log('Book detection result:', bookDetection);
+      console.log('Book detection result:', {
+        isBookCover: bookDetection.isBookCover,
+        confidence: bookDetection.confidence,
+        title: bookDetection.title,
+        author: bookDetection.author,
+        extractedLines: bookDetection.extractedLines
+      });
       
       let finalText = text;
       let bookInfo = null;
       let isBookSummary = false;
       
-      if (bookDetection.isBookCover && bookDetection.title) {
+      // Check if this might be a book cover (either detected or fallback)
+      let shouldSearchAsBook = bookDetection.isBookCover && bookDetection.title;
+      let searchTitle = bookDetection.title;
+      let searchAuthor = bookDetection.author;
+      
+      // Fallback: If not detected as book but text is short and looks like title/author
+      if (!shouldSearchAsBook) {
+        const lines = text.split('\n').filter(line => line.trim().length > 0);
+        const significantLines = lines.filter(line => 
+          line.length > 3 && 
+          line.length < 100 && 
+          !/^\d+$/.test(line.trim()) &&
+          /[a-zA-Z]/.test(line)
+        );
+        
+        console.log('Fallback check - significant lines:', significantLines);
+        
+        // If we have 1-6 short lines, treat as potential book cover
+        if (significantLines.length >= 1 && significantLines.length <= 6) {
+          shouldSearchAsBook = true;
+          searchTitle = significantLines[0]; // Use first line as title
+          if (significantLines.length > 1) {
+            // Look for author in remaining lines
+            for (let i = 1; i < significantLines.length; i++) {
+              const line = significantLines[i].trim();
+              if (line.length > 3 && line.length < 50) {
+                searchAuthor = line;
+                break;
+              }
+            }
+          }
+          console.log('Fallback book detection activated:', { searchTitle, searchAuthor });
+        }
+      }
+      
+      if (shouldSearchAsBook && searchTitle) {
         updateStepStatus('analyze', 'active');
-        console.log('Book detected! Searching online...', {
-          title: bookDetection.title,
-          author: bookDetection.author,
-          confidence: bookDetection.confidence
+        console.log('Searching for book online...', {
+          title: searchTitle,
+          author: searchAuthor,
+          confidence: bookDetection.confidence,
+          source: bookDetection.isBookCover ? 'detection' : 'fallback'
         });
         
         try {
@@ -249,8 +295,8 @@ export default function HomePage() {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              title: cleanBookTitle(bookDetection.title),
-              author: bookDetection.author ? cleanAuthorName(bookDetection.author) : undefined
+              title: cleanBookTitle(searchTitle),
+              author: searchAuthor ? cleanAuthorName(searchAuthor) : undefined
             })
           });
           

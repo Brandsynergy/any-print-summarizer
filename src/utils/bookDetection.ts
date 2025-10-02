@@ -19,9 +19,12 @@ export function detectBookCover(text: string): BookCoverDetection {
     /\b(novel|story|tales?|memoir|biography|autobiography)\b/i,
     /\b(bestseller|award.?winning|new york times)\b/i,
     /\b(fiction|non.?fiction|mystery|romance|thriller|fantasy|sci-fi|science fiction)\b/i,
-    /\b(author|writer|by)\s+[A-Z][a-z]+\s+[A-Z][a-z]+/i,
-    /\b(book|volume|edition|published|publisher)\b/i,
-    /\b(isbn|copyright|©)\b/i
+    /\b(author|writer|by)\s+[A-Za-z\s]+/i,
+    /\b(book|volume|edition|published|publisher|press)\b/i,
+    /\b(isbn|copyright|©)\b/i,
+    /\b(chapter|page)\b/i,
+    /\$(\d+\.)?\d+/,  // Price indicator
+    /\d{10,13}/  // ISBN-like numbers
   ];
 
   // Look for typical book cover text patterns
@@ -102,7 +105,8 @@ export function detectBookCover(text: string): BookCoverDetection {
   // Final confidence adjustment
   confidence = Math.min(confidence, 1.0);
 
-  const isBookCover = confidence > 0.4; // Threshold for book detection
+  // Lower threshold for better detection
+  const isBookCover = confidence > 0.2; // Lowered threshold for book detection
 
   return {
     isBookCover,
