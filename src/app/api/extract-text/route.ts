@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// Client-side OCR processing - no server-side file storage needed
+import Tesseract from 'tesseract.js';
+
+// Server-side OCR processing for better performance
 export async function POST(request: NextRequest) {
   try {
     const { imageData } = await request.json();
@@ -12,18 +14,37 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Return success - client will handle OCR processing with the imageData
+    console.log('Starting server-side OCR processing...');
+    
+    // Convert base64 to buffer
+    const base64Data = imageData.replace(/^data:image\/[a-z]+;base64,/, '');
+    const imageBuffer = Buffer.from(base64Data, 'base64');
+    
+    // Perform OCR on server
+    const { data: { text } } = await Tesseract.recognize(imageBuffer, 'eng', {
+      logger: m => console.log('Server OCR:', m.status, m.progress ? `${Math.round(m.progress * 100)}%` : '')
+    });
+
+    if (!text || text.trim().length < 10) {
+      return NextResponse.json({ 
+        success: false, 
+        error: 'No readable text found in the image. Please try a clearer image.' 
+      }, { status: 400 });
+    }
+
+    console.log('Server OCR completed. Text length:', text.length);
+
     return NextResponse.json({
       success: true,
-      message: 'Image ready for OCR processing',
-      ready: true,
+      text: text.trim(),
+      wordCount: text.trim().split(/\s+/).length
     });
 
   } catch (error) {
-    console.error('Text extraction error:', error);
+    console.error('Server OCR error:', error);
     return NextResponse.json({ 
       success: false, 
-      error: 'Failed to process text extraction request' 
+      error: 'Failed to extract text from image' 
     }, { status: 500 });
   }
 }

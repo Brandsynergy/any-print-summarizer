@@ -179,48 +179,38 @@ export default function HomePage() {
       const uploadData = await uploadResponse.json();
       updateStepStatus('upload', 'completed');
       
-      // Step 2: Extract text with OCR
+      // Step 2: Extract text with OCR (Server-side for better performance)
       updateStepStatus('extract', 'active');
       
-      // Use Tesseract.js for client-side OCR with the processed image data
-      console.log('Starting OCR process...');
-      setOcrProgress(10);
+      console.log('Starting server-side OCR process...');
+      setOcrProgress(20);
       
-      let text: string;
+      const extractResponse = await fetch('/api/extract-text', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ imageData: uploadData.imageData }),
+      });
       
-      try {
-        const Tesseract = (await import('tesseract.js')).default;
-        console.log('Tesseract loaded successfully');
-        setOcrProgress(20);
-        
-        // Use the processed image data from the server
-        console.log('Starting text recognition...');
-        const { data: { text: extractedText } } = await Tesseract.recognize(uploadData.imageData, 'eng', {
-          logger: (m) => {
-            console.log('OCR Logger:', m);
-            if (m.status === 'recognizing text') {
-              const progress = Math.round(20 + (m.progress * 70)); // 20-90% range
-              console.log('OCR Progress:', progress + '%');
-              setOcrProgress(progress);
-            }
-          }
-        });
-        
-        text = extractedText;
-        console.log('OCR completed. Extracted text length:', text?.length || 0);
-        setOcrProgress(100);
-        
-        if (!text || text.trim().length < 50) {
-          throw new Error(`Could not read enough text from the image. Only found ${text?.trim()?.length || 0} characters. Please try a clearer image with more text.`);
-        }
-        
-        console.log('OCR Text extracted successfully:', text.substring(0, 100) + '...');
-        
-      } catch (ocrError) {
-        console.error('OCR Error:', ocrError);
-        const errorMessage = ocrError instanceof Error ? ocrError.message : 'Unknown OCR error';
-        throw new Error(`Text recognition failed: ${errorMessage}. Please try a different image.`);
+      setOcrProgress(80);
+      
+      if (!extractResponse.ok) {
+        const error = await extractResponse.json();
+        throw new Error(error.error || 'Text extraction failed');
       }
+      
+      const extractData = await extractResponse.json();
+      const text = extractData.text;
+      
+      setOcrProgress(100);
+      console.log('Server OCR completed. Extracted text length:', text?.length || 0);
+      
+      if (!text || text.trim().length < 50) {
+        throw new Error(`Could not read enough text from the image. Only found ${text?.trim()?.length || 0} characters. Please try a clearer image with more text.`);
+      }
+      
+      console.log('OCR Text extracted successfully:', text.substring(0, 100) + '...');
       
       updateStepStatus('extract', 'completed');
       
