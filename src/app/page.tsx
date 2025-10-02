@@ -379,8 +379,10 @@ export default function HomePage() {
       const summaryController = new AbortController();
       const summaryTimeout = setTimeout(() => summaryController.abort(), 90000); // 90 second timeout
       
+      let summaryResponse: Response;
+      
       try {
-        const summaryResponse = await fetch('/api/summarize', {
+        summaryResponse = await fetch('/api/summarize', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -398,6 +400,21 @@ export default function HomePage() {
         
         console.log('Summarization API responded successfully');
         
+        const summaryData = await summaryResponse.json();
+        
+        // Add book information to results if available
+        const finalResults = {
+          ...summaryData,
+          isBookSummary,
+          bookInfo
+        };
+        
+        updateStepStatus('summarize', 'completed');
+        updateStepStatus('complete', 'completed');
+        
+        setResults(finalResults);
+        setCurrentStep('results');
+        
       } catch (fetchError) {
         clearTimeout(summaryTimeout);
         if (fetchError instanceof Error && fetchError.name === 'AbortError') {
@@ -405,21 +422,6 @@ export default function HomePage() {
         }
         throw fetchError;
       }
-      
-      const summaryData = await summaryResponse.json();
-      
-      // Add book information to results if available
-      const finalResults = {
-        ...summaryData,
-        isBookSummary,
-        bookInfo
-      };
-      
-      updateStepStatus('summarize', 'completed');
-      updateStepStatus('complete', 'completed');
-      
-      setResults(finalResults);
-      setCurrentStep('results');
       
     } catch (error: any) {
       console.error('Processing error:', error);
