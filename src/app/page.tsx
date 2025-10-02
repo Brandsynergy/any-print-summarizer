@@ -241,8 +241,8 @@ export default function HomePage() {
       
       // Fallback: If not detected as book but text is short and looks like title/author
       if (!shouldSearchAsBook) {
-        const lines = text.split('\n').filter(line => line.trim().length > 0);
-        const significantLines = lines.filter(line => 
+        const lines = text.split('\n').filter((line: string) => line.trim().length > 0);
+        const significantLines = lines.filter((line: string) => 
           line.length > 3 && 
           line.length < 100 && 
           !/^\d+$/.test(line.trim()) &&
