@@ -186,6 +186,8 @@ export default function HomePage() {
       console.log('Starting OCR process...');
       setOcrProgress(10);
       
+      let text: string;
+      
       try {
         const Tesseract = (await import('tesseract.js')).default;
         console.log('Tesseract loaded successfully');
@@ -193,7 +195,7 @@ export default function HomePage() {
         
         // Use the processed image data from the server
         console.log('Starting text recognition...');
-        const { data: { text } } = await Tesseract.recognize(uploadData.imageData, 'eng', {
+        const { data: { text: extractedText } } = await Tesseract.recognize(uploadData.imageData, 'eng', {
           logger: (m) => {
             console.log('OCR Logger:', m);
             if (m.status === 'recognizing text') {
@@ -203,6 +205,8 @@ export default function HomePage() {
             }
           }
         });
+        
+        text = extractedText;
         console.log('OCR completed. Extracted text length:', text?.length || 0);
         setOcrProgress(100);
         
