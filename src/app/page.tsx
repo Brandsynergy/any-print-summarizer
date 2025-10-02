@@ -179,35 +179,60 @@ export default function HomePage() {
       const uploadData = await uploadResponse.json();
       updateStepStatus('upload', 'completed');
       
-      // Step 2: Extract text with OCR (Server-side for better performance)
+      // Step 2: Extract text with OCR (Client-side with faster settings)
       updateStepStatus('extract', 'active');
       
-      console.log('Starting server-side OCR process...');
+      console.log('Starting optimized OCR process...');
       setOcrProgress(20);
       
-      const extractResponse = await fetch('/api/extract-text', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ imageData: uploadData.imageData }),
-      });
+      let text: string;
       
-      setOcrProgress(80);
-      
-      if (!extractResponse.ok) {
-        const error = await extractResponse.json();
-        throw new Error(error.error || 'Text extraction failed');
+      try {
+        const Tesseract = (await import('tesseract.js')).default;
+        console.log('Tesseract loaded successfully');
+        setOcrProgress(30);
+        
+        // Use faster OCR settings for quicker processing
+        const { data: { text: extractedText } } = await Tesseract.recognize(
+          uploadData.imageData, 
+          'eng', 
+          {
+            logger: (m: any) => {
+              if (m.status === 'recognizing text') {
+                const progress = Math.round(30 + (m.progress * 60)); // 30-90% range
+                setOcrProgress(progress);
+              }
+            },
+            // Faster OCR settings
+            tessedit_pageseg_mode: Tesseract.PSM.SINGLE_BLOCK,
+            tessedit_ocr_engine_mode: Tesseract.OEM.TESSERACT_LSTM_COMBINED
+          }
+        );
+        
+        text = extractedText;
+        setOcrProgress(100);
+        console.log('OCR completed. Extracted text length:', text?.length || 0);
+        
+      } catch (ocrError) {
+        console.error('OCR Error:', ocrError);
+        // Fallback: Try with basic settings
+        console.log('Trying OCR with basic settings...');
+        
+        try {
+          const Tesseract = (await import('tesseract.js')).default;
+          const { data: { text: fallbackText } } = await Tesseract.recognize(
+            uploadData.imageData,
+            'eng'
+          );
+          text = fallbackText;
+          setOcrProgress(100);
+        } catch (fallbackError) {
+          throw new Error('OCR processing failed. Please try a clearer image.');
+        }
       }
       
-      const extractData = await extractResponse.json();
-      const text = extractData.text;
-      
-      setOcrProgress(100);
-      console.log('Server OCR completed. Extracted text length:', text?.length || 0);
-      
-      if (!text || text.trim().length < 50) {
-        throw new Error(`Could not read enough text from the image. Only found ${text?.trim()?.length || 0} characters. Please try a clearer image with more text.`);
+      if (!text || text.trim().length < 10) {
+        throw new Error(`Could not read enough text from the image. Only found ${text?.trim()?.length || 0} characters. Please try a clearer image.`);
       }
       
       console.log('OCR Text extracted successfully:', text.substring(0, 100) + '...');
