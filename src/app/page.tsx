@@ -372,56 +372,35 @@ export default function HomePage() {
       updateStepStatus('summarize', 'active');
       
       console.log('Starting summarization...');
-      console.log('Text length for summarization:', finalText.length);
-      console.log('Is book summary?', isBookSummary);
+      console.log('Text to summarize:', finalText.substring(0, 200) + '...');
       
-      // Add timeout to prevent hanging
-      const summaryController = new AbortController();
-      const summaryTimeout = setTimeout(() => summaryController.abort(), 90000); // 90 second timeout
+      const summaryResponse = await fetch('/api/summarize', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text: finalText }),
+      });
       
-      let summaryResponse: Response;
-      
-      try {
-        summaryResponse = await fetch('/api/summarize', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ text: finalText }),
-          signal: summaryController.signal
-        });
-        
-        clearTimeout(summaryTimeout);
-        
-        if (!summaryResponse.ok) {
-          const error = await summaryResponse.json().catch(() => ({ error: 'Unknown error' }));
-          throw new Error(error.error || `Summarization failed with status ${summaryResponse.status}`);
-        }
-        
-        console.log('Summarization API responded successfully');
-        
-        const summaryData = await summaryResponse.json();
-        
-        // Add book information to results if available
-        const finalResults = {
-          ...summaryData,
-          isBookSummary,
-          bookInfo
-        };
-        
-        updateStepStatus('summarize', 'completed');
-        updateStepStatus('complete', 'completed');
-        
-        setResults(finalResults);
-        setCurrentStep('results');
-        
-      } catch (fetchError) {
-        clearTimeout(summaryTimeout);
-        if (fetchError instanceof Error && fetchError.name === 'AbortError') {
-          throw new Error('Summarization is taking too long. Please try with a shorter text or clearer image.');
-        }
-        throw fetchError;
+      if (!summaryResponse.ok) {
+        const errorText = await summaryResponse.text();
+        throw new Error(`Summarization failed: ${errorText}`);
       }
+      
+      const summaryData = await summaryResponse.json();
+      
+      // Add book information to results if available
+      const finalResults = {
+        ...summaryData,
+        isBookSummary,
+        bookInfo
+      };
+      
+      updateStepStatus('summarize', 'completed');
+      updateStepStatus('complete', 'completed');
+      
+      setResults(finalResults);
+      setCurrentStep('results');
       
     } catch (error: any) {
       console.error('Processing error:', error);
