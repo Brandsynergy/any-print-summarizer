@@ -219,7 +219,7 @@ export default function HomePage() {
       
       console.log('=== BOOK DETECTION DEBUG ===');
       console.log('OCR Text (first 500 chars):', text.substring(0, 500));
-      console.log('OCR Text lines:', text.split('\n').filter(line => line.trim()));
+      console.log('OCR Text lines:', text.split('\n').filter((line: string) => line.trim()));
       
       const bookDetection = detectBookCover(text);
       console.log('Book detection result:', {
