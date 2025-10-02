@@ -259,39 +259,21 @@ export default function HomePage() {
       let bookInfo = null;
       let isBookSummary = false;
       
-      // Check if this might be a book cover (either detected or fallback)
-      let shouldSearchAsBook: boolean = bookDetection.isBookCover && !!bookDetection.title;
-      let searchTitle: string | undefined = bookDetection.title;
-      let searchAuthor: string | undefined = bookDetection.author;
+      // STRICT book detection - only search if we have high confidence
+      let shouldSearchAsBook: boolean = false;
+      let searchTitle: string | undefined;
+      let searchAuthor: string | undefined;
       
-      // Fallback: If not detected as book but text is short and looks like title/author
-      if (!shouldSearchAsBook) {
-        const lines = text.split('\n').filter((line: string) => line.trim().length > 0);
-        const significantLines = lines.filter((line: string) => 
-          line.length > 3 && 
-          line.length < 100 && 
-          !/^\d+$/.test(line.trim()) &&
-          /[a-zA-Z]/.test(line)
-        );
-        
-        console.log('Fallback check - significant lines:', significantLines);
-        
-        // If we have 1-6 short lines, treat as potential book cover
-        if (significantLines.length >= 1 && significantLines.length <= 6) {
-          shouldSearchAsBook = true;
-          searchTitle = significantLines[0]; // Use first line as title
-          if (significantLines.length > 1) {
-            // Look for author in remaining lines
-            for (let i = 1; i < significantLines.length; i++) {
-              const line = significantLines[i].trim();
-              if (line.length > 3 && line.length < 50) {
-                searchAuthor = line;
-                break;
-              }
-            }
-          }
-          console.log('Fallback book detection activated:', { searchTitle, searchAuthor });
-        }
+      // Only proceed if we have STRONG book indicators
+      if (bookDetection.isBookCover && bookDetection.confidence > 0.5 && bookDetection.title) {
+        shouldSearchAsBook = true;
+        searchTitle = bookDetection.title;
+        searchAuthor = bookDetection.author;
+        console.log('CONFIDENT book detection - proceeding with search');
+      } else {
+        console.log('LOW CONFIDENCE book detection - treating as regular text');
+        console.log('Confidence:', bookDetection.confidence, 'Required: > 0.5');
+        console.log('Has title:', !!bookDetection.title);
       }
       
       if (shouldSearchAsBook && searchTitle) {
@@ -318,23 +300,51 @@ export default function HomePage() {
           if (bookSearchResponse.ok) {
             const bookData = await bookSearchResponse.json();
             if (bookData.success) {
-              bookInfo = bookData.book;
-              isBookSummary = true;
+              // VERIFY the found book matches what we detected
+              const foundTitle = bookData.book.title.toLowerCase();
+              const searchedTitle = (searchTitle || '').toLowerCase();
+              const foundAuthor = bookData.book.authors[0]?.toLowerCase() || '';
+              const searchedAuthor = (searchAuthor || '').toLowerCase();
               
-              // Use book description and additional content for summarization
-              finalText = `Book Title: ${bookInfo.title}
-              Author: ${bookInfo.authors.join(', ')}
-              Published: ${bookInfo.publishedDate} by ${bookInfo.publisher}
+              // Check title similarity (must have significant overlap)
+              const titleMatch = foundTitle.includes(searchedTitle.substring(0, Math.min(10, searchedTitle.length))) ||
+                               searchedTitle.includes(foundTitle.substring(0, Math.min(10, foundTitle.length)));
               
-              Description: ${bookInfo.description}
+              // Check author similarity if we detected an author
+              const authorMatch = !searchedAuthor || 
+                                foundAuthor.includes(searchedAuthor.split(' ')[0]) ||
+                                searchedAuthor.includes(foundAuthor.split(' ')[0]);
               
-              ${bookData.additionalContent || ''}
+              console.log('BOOK VERIFICATION:');
+              console.log('Detected title:', searchedTitle);
+              console.log('Found title:', foundTitle);
+              console.log('Title match:', titleMatch);
+              console.log('Detected author:', searchedAuthor);
+              console.log('Found author:', foundAuthor);
+              console.log('Author match:', authorMatch);
               
-              Categories: ${bookInfo.categories.join(', ')}
-              Page Count: ${bookInfo.pageCount}
-              ${bookInfo.averageRating ? `Rating: ${bookInfo.averageRating}/5 (${bookInfo.ratingsCount} reviews)` : ''}`;
-              
-              console.log('Using book data for summarization');
+              if (titleMatch && authorMatch) {
+                bookInfo = bookData.book;
+                isBookSummary = true;
+                
+                // Use book description and additional content for summarization
+                finalText = `Book Title: ${bookInfo.title}
+                Author: ${bookInfo.authors.join(', ')}
+                Published: ${bookInfo.publishedDate} by ${bookInfo.publisher}
+                
+                Description: ${bookInfo.description}
+                
+                ${bookData.additionalContent || ''}
+                
+                Categories: ${bookInfo.categories.join(', ')}
+                Page Count: ${bookInfo.pageCount}
+                ${bookInfo.averageRating ? `Rating: ${bookInfo.averageRating}/5 (${bookInfo.ratingsCount} reviews)` : ''}`;
+                
+                console.log('✅ VERIFIED MATCH - Using book data for summarization');
+              } else {
+                console.log('❌ VERIFICATION FAILED - Found book does not match detected text');
+                console.log('Falling back to regular OCR text summarization');
+              }
             }
           }
         } catch (bookError) {

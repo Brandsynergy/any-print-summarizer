@@ -16,15 +16,13 @@ export function detectBookCover(text: string): BookCoverDetection {
 
   // Look for common book cover patterns
   const bookIndicators = [
-    /\b(novel|story|tales?|memoir|biography|autobiography)\b/i,
-    /\b(bestseller|award.?winning|new york times)\b/i,
-    /\b(fiction|non.?fiction|mystery|romance|thriller|fantasy|sci-fi|science fiction)\b/i,
-    /\b(author|writer|by)\s+[A-Za-z\s]+/i,
-    /\b(book|volume|edition|published|publisher|press)\b/i,
-    /\b(isbn|copyright|©)\b/i,
-    /\b(chapter|page)\b/i,
-    /\$(\d+\.)?\d+/,  // Price indicator
-    /\d{10,13}/  // ISBN-like numbers
+    /\b(novel|memoir|biography|autobiography)\b/i,  // More specific book types
+    /\b(bestseller|award.?winning|new york times bestseller)\b/i,
+    /\b(by:?\s+[A-Z][a-z]+\s+[A-Z][a-z]+)\b/i,  // "by Author Name" format
+    /\b(isbn|copyright|©)\b/i,  // Publishing indicators
+    /^\$\d+\.\d{2}$/,  // Price format like $19.99
+    /^\d{10,13}$/,  // ISBN format
+    /\b(hardcover|paperback|kindle edition)\b/i  // Format indicators
   ];
 
   // Look for typical book cover text patterns
@@ -112,8 +110,8 @@ export function detectBookCover(text: string): BookCoverDetection {
   // Final confidence adjustment
   confidence = Math.min(confidence, 1.0);
 
-  // Lower threshold for better detection
-  const isBookCover = confidence > 0.2; // Lowered threshold for book detection
+  // STRICT threshold - only detect books we're very confident about
+  const isBookCover = confidence > 0.7; // Much higher threshold for accurate detection
 
   return {
     isBookCover,
