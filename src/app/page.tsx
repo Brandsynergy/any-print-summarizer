@@ -400,7 +400,7 @@ export default function HomePage() {
         
       } catch (fetchError) {
         clearTimeout(summaryTimeout);
-        if (fetchError.name === 'AbortError') {
+        if (fetchError instanceof Error && fetchError.name === 'AbortError') {
           throw new Error('Summarization is taking too long. Please try with a shorter text or clearer image.');
         }
         throw fetchError;
