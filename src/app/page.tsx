@@ -202,10 +202,7 @@ export default function HomePage() {
                 const progress = Math.round(30 + (m.progress * 60)); // 30-90% range
                 setOcrProgress(progress);
               }
-            },
-            // Faster OCR settings
-            tessedit_pageseg_mode: Tesseract.PSM.SINGLE_BLOCK,
-            tessedit_ocr_engine_mode: Tesseract.OEM.TESSERACT_LSTM_COMBINED
+            }
           }
         );
         
