@@ -214,7 +214,8 @@ export default function HomePage() {
         
       } catch (ocrError) {
         console.error('OCR Error:', ocrError);
-        throw new Error(`Text recognition failed: ${ocrError.message || 'Unknown OCR error'}. Please try a different image.`);
+        const errorMessage = ocrError instanceof Error ? ocrError.message : 'Unknown OCR error';
+        throw new Error(`Text recognition failed: ${errorMessage}. Please try a different image.`);
       }
       
       updateStepStatus('extract', 'completed');
