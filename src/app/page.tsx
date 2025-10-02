@@ -252,6 +252,9 @@ export default function HomePage() {
         extractedLines: bookDetection.extractedLines
       });
       
+      console.log('Cleaned title for search:', bookDetection.title ? cleanBookTitle(bookDetection.title) : 'none');
+      console.log('Cleaned author for search:', bookDetection.author ? cleanAuthorName(bookDetection.author) : 'none');
+      
       let finalText = text;
       let bookInfo = null;
       let isBookSummary = false;

@@ -32,6 +32,9 @@ export function detectBookCover(text: string): BookCoverDetection {
     /^by\s+(.+)$/i,
     /^(.+)\s+(author|writer)$/i,
     /^\s*([A-Z][a-z]+\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\s*$/,
+    /^\s*([A-Z]\.[A-Z]\.[\s\w]+)\s*$/,  // Initials like J.K. Rowling
+    /^\s*([A-Z][a-z]+\s+[A-Z]\.[\s\w]+)\s*$/,  // First name + initial
+    /^\s*(Dr\.|Prof\.|Mr\.|Ms\.|Mrs\.)\s+([\w\s]+)$/i,  // Titles
   ];
 
   let confidence = 0;
@@ -61,8 +64,12 @@ export function detectBookCover(text: string): BookCoverDetection {
       .filter(line => line.length > 5)
       .sort((a, b) => {
         // Prefer lines that are all caps or title case
-        const aScore = (/^[A-Z\s]+$/.test(a) ? 2 : 0) + (/^[A-Z][a-z\s]*$/.test(a) ? 1 : 0);
-        const bScore = (/^[A-Z\s]+$/.test(b) ? 2 : 0) + (/^[A-Z][a-z\s]*$/.test(b) ? 1 : 0);
+        const aScore = (/^[A-Z\s]+$/.test(a) ? 3 : 0) + 
+                      (/^[A-Z][a-z\s]*$/.test(a) ? 2 : 0) + 
+                      (a.length > 10 ? 1 : 0); // Longer titles get bonus
+        const bScore = (/^[A-Z\s]+$/.test(b) ? 3 : 0) + 
+                      (/^[A-Z][a-z\s]*$/.test(b) ? 2 : 0) + 
+                      (b.length > 10 ? 1 : 0);
         
         if (aScore !== bScore) return bScore - aScore;
         return b.length - a.length;
@@ -70,7 +77,7 @@ export function detectBookCover(text: string): BookCoverDetection {
 
     if (titleCandidates.length > 0) {
       detectedTitle = titleCandidates[0];
-      confidence += 0.2;
+      confidence += 0.3; // Increased confidence for better title detection
     }
   }
 
