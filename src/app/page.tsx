@@ -245,9 +245,9 @@ export default function HomePage() {
       let isBookSummary = false;
       
       // Check if this might be a book cover (either detected or fallback)
-      let shouldSearchAsBook = bookDetection.isBookCover && bookDetection.title;
-      let searchTitle = bookDetection.title;
-      let searchAuthor = bookDetection.author;
+      let shouldSearchAsBook: boolean = bookDetection.isBookCover && !!bookDetection.title;
+      let searchTitle: string | undefined = bookDetection.title;
+      let searchAuthor: string | undefined = bookDetection.author;
       
       // Fallback: If not detected as book but text is short and looks like title/author
       if (!shouldSearchAsBook) {
