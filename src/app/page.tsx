@@ -328,13 +328,25 @@ export default function HomePage() {
                 isBookSummary = true;
                 
                 // Use book description and additional content for summarization
+                let bookDescription = bookInfo.description || '';
+                let additionalContent = bookData.additionalContent || '';
+                
+                // Limit content length to prevent API timeouts
+                const maxDescLength = 3000;
+                if (bookDescription.length > maxDescLength) {
+                  bookDescription = bookDescription.substring(0, maxDescLength) + '...';
+                }
+                if (additionalContent.length > 1000) {
+                  additionalContent = additionalContent.substring(0, 1000) + '...';
+                }
+                
                 finalText = `Book Title: ${bookInfo.title}
                 Author: ${bookInfo.authors.join(', ')}
                 Published: ${bookInfo.publishedDate} by ${bookInfo.publisher}
                 
-                Description: ${bookInfo.description}
+                Description: ${bookDescription}
                 
-                ${bookData.additionalContent || ''}
+                ${additionalContent}
                 
                 Categories: ${bookInfo.categories.join(', ')}
                 Page Count: ${bookInfo.pageCount}
@@ -359,17 +371,39 @@ export default function HomePage() {
       // Step 4: Create Summary
       updateStepStatus('summarize', 'active');
       
-      const summaryResponse = await fetch('/api/summarize', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ text: finalText }),
-      });
+      console.log('Starting summarization...');
+      console.log('Text length for summarization:', finalText.length);
+      console.log('Is book summary?', isBookSummary);
       
-      if (!summaryResponse.ok) {
-        const error = await summaryResponse.json();
-        throw new Error(error.error || 'Summarization failed');
+      // Add timeout to prevent hanging
+      const summaryController = new AbortController();
+      const summaryTimeout = setTimeout(() => summaryController.abort(), 90000); // 90 second timeout
+      
+      try {
+        const summaryResponse = await fetch('/api/summarize', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ text: finalText }),
+          signal: summaryController.signal
+        });
+        
+        clearTimeout(summaryTimeout);
+        
+        if (!summaryResponse.ok) {
+          const error = await summaryResponse.json().catch(() => ({ error: 'Unknown error' }));
+          throw new Error(error.error || `Summarization failed with status ${summaryResponse.status}`);
+        }
+        
+        console.log('Summarization API responded successfully');
+        
+      } catch (fetchError) {
+        clearTimeout(summaryTimeout);
+        if (fetchError.name === 'AbortError') {
+          throw new Error('Summarization is taking too long. Please try with a shorter text or clearer image.');
+        }
+        throw fetchError;
       }
       
       const summaryData = await summaryResponse.json();
