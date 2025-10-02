@@ -149,15 +149,20 @@ export function ImageUploader({ onFileUpload }: ImageUploaderProps) {
             </div>
             
             {/* File Info */}
-            <div className="bg-gray-50 rounded-lg p-4 mb-6">
-              <h4 className="font-bold text-gray-800 mb-2 font-comic">Picture Details:</h4>
-              <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
-                <div>
-                  <span className="font-medium">Name:</span> {selectedFile.name}
+            <div className="bg-gradient-to-r from-green-50 to-blue-50 border-2 border-green-200 rounded-lg p-6 mb-6">
+              <h4 className="font-bold text-green-800 mb-3 font-comic text-lg">✅ Picture Uploaded Successfully!</h4>
+              <div className="bg-white rounded p-3 mb-4">
+                <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
+                  <div>
+                    <span className="font-medium">Name:</span> {selectedFile.name}
+                  </div>
+                  <div>
+                    <span className="font-medium">Size:</span> {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                  </div>
                 </div>
-                <div>
-                  <span className="font-medium">Size:</span> {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
-                </div>
+              </div>
+              <div className="text-center p-3 bg-yellow-100 border-2 border-yellow-300 rounded-lg">
+                <p className="font-bold text-yellow-800 font-comic text-lg">👇 IMPORTANT: Click the button below to start! 👇</p>
               </div>
             </div>
             
@@ -165,11 +170,15 @@ export function ImageUploader({ onFileUpload }: ImageUploaderProps) {
             <div className="flex flex-col sm:flex-row gap-4">
               <motion.button
                 onClick={handleStartProcessing}
-                className="btn btn-primary btn-lg font-comic text-lg px-8 py-3 rounded-full shadow-lg flex-1 pulse-color"
+                className="btn btn-primary btn-lg font-comic text-lg px-8 py-3 rounded-full shadow-lg flex-1 pulse-color animate-pulse"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
+                style={{ 
+                  background: 'linear-gradient(45deg, #3B82F6, #8B5CF6)',
+                  boxShadow: '0 0 20px rgba(59, 130, 246, 0.5)'
+                }}
               >
-                Start the Magic! ✨
+                🚀 START THE MAGIC! ✨ CLICK HERE! 🚀
               </motion.button>
               <motion.button
                 onClick={handleRemoveFile}

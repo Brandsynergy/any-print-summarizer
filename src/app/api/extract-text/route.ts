@@ -1,38 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
-import path from 'path';
-import { readFile } from 'fs/promises';
 
-// Note: In production, you might want to use server-side OCR
-// For now, we'll return instructions for client-side OCR with Tesseract.js
-
+// Client-side OCR processing - no server-side file storage needed
 export async function POST(request: NextRequest) {
   try {
-    const { filename } = await request.json();
+    const { imageData } = await request.json();
 
-    if (!filename) {
+    if (!imageData) {
       return NextResponse.json({ 
         success: false, 
-        error: 'Filename is required' 
+        error: 'Image data is required' 
       }, { status: 400 });
     }
 
-    // Check if file exists
-    const filepath = path.join(process.cwd(), 'uploads', filename);
-    
-    try {
-      await readFile(filepath);
-    } catch (error) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'File not found' 
-      }, { status: 404 });
-    }
-
-    // Return the file path for client-side OCR processing
+    // Return success - client will handle OCR processing with the imageData
     return NextResponse.json({
       success: true,
-      message: 'File ready for OCR processing',
-      imagePath: `/uploads/${filename}`,
+      message: 'Image ready for OCR processing',
+      ready: true,
     });
 
   } catch (error) {

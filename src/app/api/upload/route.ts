@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile, mkdir } from 'fs/promises';
-import path from 'path';
 import sharp from 'sharp';
 
 export async function POST(request: NextRequest) {
@@ -33,19 +31,10 @@ export async function POST(request: NextRequest) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    // Create uploads directory if it doesn't exist
-    const uploadsDir = path.join(process.cwd(), 'uploads');
-    try {
-      await mkdir(uploadsDir, { recursive: true });
-    } catch (error) {
-      // Directory might already exist
-    }
-
-    // Generate unique filename
+    // Generate unique filename for reference
     const timestamp = Date.now();
     const randomString = Math.random().toString(36).substring(2, 15);
     const filename = `${timestamp}-${randomString}.jpg`;
-    const filepath = path.join(uploadsDir, filename);
 
     // Process image with Sharp (convert to JPEG and optimize)
     const processedBuffer = await sharp(buffer)
@@ -53,14 +42,15 @@ export async function POST(request: NextRequest) {
       .resize({ width: 1920, height: 1920, fit: 'inside', withoutEnlargement: true })
       .toBuffer();
 
-    // Save processed image
-    await writeFile(filepath, processedBuffer);
+    // Return the processed image as base64 for immediate use
+    const base64Image = processedBuffer.toString('base64');
 
     return NextResponse.json({
       success: true,
       filename,
       size: processedBuffer.length,
       originalName: file.name,
+      imageData: `data:image/jpeg;base64,${base64Image}`
     });
 
   } catch (error) {

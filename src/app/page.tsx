@@ -160,9 +160,8 @@ export default function HomePage() {
 
   const startProcessing = async (file: File) => {
     try {
-      // Step 1: Upload
+      // Step 1: Upload and Process
       updateStepStatus('upload', 'active');
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate upload time
       
       const formData = new FormData();
       formData.append('file', file);
@@ -183,24 +182,39 @@ export default function HomePage() {
       // Step 2: Extract text with OCR
       updateStepStatus('extract', 'active');
       
-      // Use Tesseract.js for client-side OCR with optimizations
-      const Tesseract = (await import('tesseract.js')).default;
+      // Use Tesseract.js for client-side OCR with the processed image data
+      console.log('Starting OCR process...');
+      setOcrProgress(10);
       
-      // Preprocess image for better OCR performance
-      const preprocessedFile = await preprocessImageForOCR(file);
-      
-      const { data: { text } } = await Tesseract.recognize(preprocessedFile, 'eng', {
-        logger: (m) => {
-          if (m.status === 'recognizing text') {
-            const progress = Math.round(m.progress * 100);
-            console.log('OCR Progress:', progress + '%');
-            setOcrProgress(progress);
+      try {
+        const Tesseract = (await import('tesseract.js')).default;
+        console.log('Tesseract loaded successfully');
+        setOcrProgress(20);
+        
+        // Use the processed image data from the server
+        console.log('Starting text recognition...');
+        const { data: { text } } = await Tesseract.recognize(uploadData.imageData, 'eng', {
+          logger: (m) => {
+            console.log('OCR Logger:', m);
+            if (m.status === 'recognizing text') {
+              const progress = Math.round(20 + (m.progress * 70)); // 20-90% range
+              console.log('OCR Progress:', progress + '%');
+              setOcrProgress(progress);
+            }
           }
+        });
+        console.log('OCR completed. Extracted text length:', text?.length || 0);
+        setOcrProgress(100);
+        
+        if (!text || text.trim().length < 50) {
+          throw new Error(`Could not read enough text from the image. Only found ${text?.trim()?.length || 0} characters. Please try a clearer image with more text.`);
         }
-      });
-      
-      if (!text || text.trim().length < 50) {
-        throw new Error('Could not read enough text from the image. Please try a clearer image with more text.');
+        
+        console.log('OCR Text extracted successfully:', text.substring(0, 100) + '...');
+        
+      } catch (ocrError) {
+        console.error('OCR Error:', ocrError);
+        throw new Error(`Text recognition failed: ${ocrError.message || 'Unknown OCR error'}. Please try a different image.`);
       }
       
       updateStepStatus('extract', 'completed');
