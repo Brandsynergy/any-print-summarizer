@@ -66,36 +66,40 @@ export async function POST(request: NextRequest) {
 
 ${processedText}
 
-Please respond with the following format:
+IMPORTANT: You MUST follow this exact format structure. Do not include brackets or instructions in your response - provide actual content.
 
 ## ACADEMIC SUMMARY
-[Create a detailed, comprehensive summary (2,000-4,000 words). Include:
+
+Provide a detailed, comprehensive summary (1,500-3,000 words) that includes:
 - Thorough analysis of main concepts and themes
-- Critical examination of arguments and evidence
+- Critical examination of arguments and evidence  
 - Discussion of methodology (if applicable)
 - Contextual background and significance
 - Connections to broader academic fields
 - Evaluation of strengths and limitations
 - Implications for further research or study
-Use academic language and structure, with clear subsections and detailed explanations suitable for scholarly work.]
+
+Use academic language and structure with clear explanations suitable for scholarly work.
 
 ## 10 CRITICAL INSIGHTS
-[Extract exactly 10 critical academic insights. Format as a numbered list (1-10) with each insight being detailed and analytically rigorous. Focus on:
+
+Provide exactly 10 critical academic insights as a numbered list (1-10). Each insight should be detailed and analytically rigorous, focusing on:
 - Theoretical implications
-- Methodological contributions
+- Methodological contributions  
 - Critical arguments
 - Research gaps identified
 - Academic significance
-- Scholarly applications]
+- Scholarly applications
 
 ## ACADEMIC CONTEXT
-[Provide additional context including:
+
+Provide additional context including:
 - Related academic fields and theories
 - Potential research applications
 - Scholarly significance
-- Connections to existing literature (where apparent from the text)]
+- Connections to existing literature
 
-Ensure the analysis is thorough, well-reasoned, and suitable for academic research and study purposes.`;
+Ensure the analysis is thorough, well-reasoned, and suitable for academic research purposes.`;
     } else {
       maxTokens = 2200; // Standard mode
       systemPrompt = "You are a helpful assistant that creates clear, educational content suitable for all ages. Focus on making complex topics accessible and interesting.";
@@ -156,35 +160,108 @@ Please respond with the following format:
       }, { status: 500 });
     }
 
-    // Parse the combined response based on mode
-    const sections = content.split('## ');
+    // Enhanced parsing logic to handle various AI response formats
+    console.log('Raw AI response:', content); // Debug logging
+    
     let summary = '';
     let takeaways = '';
     let academicContext = '';
-
-    for (const section of sections) {
-      const trimmedSection = section.trim();
-      if (trimmedSection.startsWith('ACADEMIC SUMMARY') || trimmedSection.startsWith('SUMMARY')) {
-        summary = trimmedSection.replace(/^(ACADEMIC SUMMARY|SUMMARY)/, '').trim();
-      } else if (trimmedSection.startsWith('10 CRITICAL INSIGHTS') || trimmedSection.startsWith('10 KEY TAKEAWAYS')) {
-        takeaways = trimmedSection.replace(/^(10 CRITICAL INSIGHTS|10 KEY TAKEAWAYS)/, '').trim();
-      } else if (trimmedSection.startsWith('ACADEMIC CONTEXT')) {
-        academicContext = trimmedSection.replace('ACADEMIC CONTEXT', '').trim();
+    
+    // Method 1: Try parsing with ## headers
+    const sections = content.split(/##\s*/g);
+    console.log('Sections found:', sections.length, sections.map(s => s.substring(0, 50))); // Debug
+    
+    for (let i = 0; i < sections.length; i++) {
+      const section = sections[i].trim();
+      const nextSection = sections[i + 1];
+      
+      if (section.match(/^ACADEMIC SUMMARY/i) || section.match(/^SUMMARY/i)) {
+        // Extract everything after the header until the next section
+        const headerMatch = section.match(/^(ACADEMIC SUMMARY|SUMMARY)[:\s]*/i);
+        if (headerMatch) {
+          const contentAfterHeader = section.substring(headerMatch[0].length);
+          // If there's a next section, take content until that section starts
+          if (nextSection && nextSection.match(/^(10 CRITICAL INSIGHTS|10 KEY TAKEAWAYS|ACADEMIC CONTEXT)/i)) {
+            summary = contentAfterHeader.trim();
+          } else {
+            // No clear next section, take all remaining content
+            summary = sections.slice(i).join('##').substring(headerMatch[0].length).trim();
+            if (summary.includes('## 10 CRITICAL INSIGHTS') || summary.includes('## 10 KEY TAKEAWAYS')) {
+              summary = summary.split(/##\s*(10 CRITICAL INSIGHTS|10 KEY TAKEAWAYS)/i)[0].trim();
+            }
+          }
+        }
+      } else if (section.match(/^10 CRITICAL INSIGHTS/i) || section.match(/^10 KEY TAKEAWAYS/i)) {
+        const headerMatch = section.match(/^(10 CRITICAL INSIGHTS|10 KEY TAKEAWAYS)[:\s]*/i);
+        if (headerMatch) {
+          const contentAfterHeader = section.substring(headerMatch[0].length);
+          if (nextSection && nextSection.match(/^ACADEMIC CONTEXT/i)) {
+            takeaways = contentAfterHeader.trim();
+          } else {
+            takeaways = sections.slice(i).join('##').substring(headerMatch[0].length).trim();
+            if (takeaways.includes('## ACADEMIC CONTEXT')) {
+              takeaways = takeaways.split(/##\s*ACADEMIC CONTEXT/i)[0].trim();
+            }
+          }
+        }
+      } else if (section.match(/^ACADEMIC CONTEXT/i)) {
+        const headerMatch = section.match(/^ACADEMIC CONTEXT[:\s]*/i);
+        if (headerMatch) {
+          academicContext = section.substring(headerMatch[0].length).trim();
+        }
       }
     }
-
-    // Fallback parsing if the format isn't followed exactly
-    if (!summary || !takeaways) {
-      const parts = content.split(/(?:10 key takeaways|key takeaways|takeaways):?/i);
-      if (parts.length >= 2) {
-        summary = parts[0].replace(/summary:?/i, '').trim();
-        takeaways = parts[1].trim();
+    
+    // Method 2: Fallback parsing if Method 1 didn't work well
+    if (!summary || summary.length < 50) {
+      // Try splitting by different patterns
+      const patterns = [
+        /##\s*10\s*(CRITICAL INSIGHTS|KEY TAKEAWAYS)/i,
+        /\n\s*10\s*(CRITICAL INSIGHTS|KEY TAKEAWAYS)/i,
+        /(CRITICAL INSIGHTS|KEY TAKEAWAYS)\s*:/i
+      ];
+      
+      for (const pattern of patterns) {
+        const parts = content.split(pattern);
+        if (parts.length >= 2 && parts[0].trim().length > 50) {
+          // Clean up the summary part
+          summary = parts[0]
+            .replace(/^##\s*(ACADEMIC SUMMARY|SUMMARY)[:\s]*/i, '')
+            .trim();
+          break;
+        }
+      }
+    }
+    
+    // Method 3: Extract takeaways if still empty
+    if (!takeaways || takeaways.length < 20) {
+      const insightsMatch = content.match(/(?:##\s*)?(10\s*(?:CRITICAL INSIGHTS|KEY TAKEAWAYS))([\s\S]*?)(?=##\s*ACADEMIC CONTEXT|$)/i);
+      if (insightsMatch && insightsMatch[2]) {
+        takeaways = insightsMatch[2].trim();
       } else {
-        // If parsing fails, treat the entire content as summary
-        summary = content;
-        takeaways = 'Unable to extract specific takeaways from this content.';
+        // Try to extract numbered list
+        const numberedList = content.match(/1\.[\s\S]*?(?=##|$)/i);
+        if (numberedList) {
+          takeaways = numberedList[0].trim();
+        }
       }
     }
+    
+    // Final fallback
+    if (!summary && !takeaways) {
+      summary = content;
+      takeaways = 'Unable to extract specific takeaways from this content.';
+    } else if (!summary) {
+      // If we have takeaways but no summary, try to extract summary from the beginning
+      const beforeTakeaways = content.split(/(?:##\s*)?10\s*(?:CRITICAL INSIGHTS|KEY TAKEAWAYS)/i)[0];
+      summary = beforeTakeaways.replace(/^##\s*(ACADEMIC SUMMARY|SUMMARY)[:\s]*/i, '').trim();
+      if (summary.length < 50) {
+        summary = 'Summary extraction failed. Please try with different text.';
+      }
+    }
+    
+    console.log('Parsed summary length:', summary.length);
+    console.log('Parsed takeaways length:', takeaways.length);
 
     const responseData: any = {
       success: true,
