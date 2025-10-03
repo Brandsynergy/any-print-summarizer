@@ -240,3 +240,4 @@ Please respond with the following format:
       debug: process.env.NODE_ENV === 'development' ? error?.message : undefined
     }, { status: statusCode });
   }
+}
