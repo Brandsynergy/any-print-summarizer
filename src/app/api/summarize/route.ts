@@ -60,61 +60,66 @@ export async function POST(request: NextRequest) {
     if (mode === 'academic') {
       // GPT-4 Turbo supports up to 128k tokens context and 4k completion
       maxTokens = 4000; // Safe limit for comprehensive academic analysis
-      systemPrompt = "You are an academic assistant specialized in creating comprehensive, scholarly analyses. Your summaries should be thorough, well-structured, and suitable for research and academic purposes. Use formal language while remaining accessible.";
+      systemPrompt = "Write as an experienced academic researcher who thinks deeply about complex topics. Your writing should feel natural and authentic - like a knowledgeable colleague sharing insights over coffee. Vary your sentence structures, use personal observations, and let your genuine curiosity about the subject shine through. Write with the confidence of someone who has spent years in their field, but keep things accessible and engaging.";
       
-      combinedPrompt = `Please provide a comprehensive academic analysis of the following text:
+      combinedPrompt = `I'd like you to dive deep into this text and share your thoughts as someone who really knows their stuff academically. Write naturally - like you're discussing this material with a colleague over lunch, but with the depth and insight of your expertise.
 
 ${processedText}
 
-IMPORTANT: You MUST follow this exact format structure. Do not include brackets or instructions in your response - provide actual content.
+Structure your response with these sections, but let your writing flow naturally:
 
 ## ACADEMIC SUMMARY
 
-Provide a detailed, comprehensive summary (1,500-3,000 words) that includes:
-- Thorough analysis of main concepts and themes
-- Critical examination of arguments and evidence  
-- Discussion of methodology (if applicable)
-- Contextual background and significance
-- Connections to broader academic fields
-- Evaluation of strengths and limitations
-- Implications for further research or study
+Give me your comprehensive take on this (aim for 1,500-3,000 words). What really stands out to you? Think about:
+- What are the core ideas and how do they connect?
+- Where do you see strong arguments, and where might there be gaps?
+- How does this fit into the bigger academic picture?
+- What would you tell a colleague about why this matters?
+- Where do you see opportunities for future exploration?
 
-Use academic language and structure with clear explanations suitable for scholarly work.
+Write like you're genuinely engaged with the material - let your academic curiosity show through.
 
 ## 10 CRITICAL INSIGHTS
 
-Provide exactly 10 critical academic insights as a numbered list (1-10). Each insight should be detailed and analytically rigorous, focusing on:
-- Theoretical implications
-- Methodological contributions  
-- Critical arguments
-- Research gaps identified
-- Academic significance
-- Scholarly applications
+Share 10 key insights that jumped out at you (number them 1-10). These should be the kinds of observations that show your analytical depth:
+- Theoretical connections you're seeing
+- Methodological strengths or concerns
+- Arguments that particularly caught your attention
+- Gaps that future researchers might explore
+- Why this work matters in the broader academic landscape
 
 ## ACADEMIC CONTEXT
 
-Provide additional context including:
-- Related academic fields and theories
-- Potential research applications
-- Scholarly significance
-- Connections to existing literature
+Help me understand where this fits in the bigger picture:
+- What fields does this connect to?
+- How might researchers use this work?
+- Why should the academic community care about this?
+- What related work comes to mind?
 
-Ensure the analysis is thorough, well-reasoned, and suitable for academic research purposes.`;
+Write with the authority of your experience, but keep it engaging and accessible.`;
     } else {
       maxTokens = 2200; // Standard mode
-      systemPrompt = "You are a helpful assistant that creates clear, educational content suitable for all ages. Focus on making complex topics accessible and interesting.";
+      systemPrompt = "Write like a thoughtful teacher who genuinely cares about helping people understand things. Use your own voice - be conversational, ask rhetorical questions, share observations, and write as if you're explaining something fascinating to a curious friend. Mix up your sentence lengths and structures naturally. Don't be afraid to show enthusiasm or use everyday language alongside more formal terms.";
       
-      combinedPrompt = `Please analyze the following text and provide both a summary and key takeaways:
+      combinedPrompt = `Hey! I've got some interesting material here that I'd love your take on. Could you help me break it down in a way that's engaging and easy to follow?
 
 ${processedText}
 
-Please respond with the following format:
+Here's what would be really helpful:
 
 ## SUMMARY
-[Create a comprehensive yet concise summary in no more than 2,000 words. Make it engaging and easy to understand for a general audience, including children. Keep the language simple but informative.]
+
+Give me the full picture in your own words (keep it under 2,000 words). What's this really about? Write like you're explaining something fascinating to a friend - use your natural voice, mix up your sentence structures, and don't be afraid to show what you find interesting about it. Make it accessible but don't dumb it down.
 
 ## 10 KEY TAKEAWAYS
-[Extract exactly 10 key takeaways or lessons. Format as a numbered list (1-10) with each takeaway being concise but meaningful. Focus on actionable insights, important facts, or valuable lessons.]`;
+
+What are the 10 most important things someone should walk away with? Number them 1-10, but write each one like you're sharing a genuine insight. Think about:
+- What would stick with you after reading this?
+- What practical lessons are here?
+- What facts or ideas are worth remembering?
+- What might change how someone thinks about this topic?
+
+Write with personality - let your enthusiasm or curiosity show through naturally.`;
     }
 
     // Single API call instead of two parallel calls
