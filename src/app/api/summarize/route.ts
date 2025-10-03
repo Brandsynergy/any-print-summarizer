@@ -58,7 +58,8 @@ export async function POST(request: NextRequest) {
     let systemPrompt: string;
     
     if (mode === 'academic') {
-      maxTokens = 12000; // Allow up to ~10,000 words in response
+      // GPT-4 Turbo supports up to 128k tokens context and 4k completion
+      maxTokens = 4000; // Safe limit for comprehensive academic analysis
       systemPrompt = "You are an academic assistant specialized in creating comprehensive, scholarly analyses. Your summaries should be thorough, well-structured, and suitable for research and academic purposes. Use formal language while remaining accessible.";
       
       combinedPrompt = `Please provide a comprehensive academic analysis of the following text:
@@ -68,7 +69,7 @@ ${processedText}
 Please respond with the following format:
 
 ## ACADEMIC SUMMARY
-[Create a detailed, comprehensive summary (5,000-10,000 words). Include:
+[Create a detailed, comprehensive summary (2,000-4,000 words). Include:
 - Thorough analysis of main concepts and themes
 - Critical examination of arguments and evidence
 - Discussion of methodology (if applicable)
@@ -121,24 +122,30 @@ Please respond with the following format:
       }, { status: 500 });
     }
 
-    // Use GPT-4 for academic mode for better quality, keep GPT-4o-mini for standard
-    const modelToUse = mode === 'academic' ? 'gpt-4' : 'gpt-4o-mini';
+    // Use GPT-4o for both modes to ensure consistent availability and performance in production
+    const modelToUse = mode === 'academic' ? 'gpt-4o' : 'gpt-4o-mini';
     
-    const response = await client.chat.completions.create({
-      model: modelToUse,
-      messages: [
-        {
-          role: "system",
-          content: systemPrompt
-        },
-        {
-          role: "user",
-          content: combinedPrompt
-        }
-      ],
-      max_tokens: maxTokens,
-      temperature: mode === 'academic' ? 0.3 : 0.7, // Lower temperature for academic mode for more focused analysis
-    });
+    // Add timeout and retry logic for production reliability
+    const response = await Promise.race([
+      client.chat.completions.create({
+        model: modelToUse,
+        messages: [
+          {
+            role: "system",
+            content: systemPrompt
+          },
+          {
+            role: "user",
+            content: combinedPrompt
+          }
+        ],
+        max_tokens: maxTokens,
+        temperature: mode === 'academic' ? 0.3 : 0.7, // Lower temperature for academic mode for more focused analysis
+      }),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Request timeout')), 60000) // 60 second timeout
+      )
+    ]) as any;
 
     const content = response.choices[0]?.message?.content?.trim();
     
@@ -200,17 +207,36 @@ Please respond with the following format:
 
   } catch (error: any) {
     console.error('Summarization error:', error);
+    console.error('Error details:', {
+      message: error?.message,
+      status: error?.response?.status,
+      data: error?.response?.data,
+      stack: error?.stack
+    });
     
     let errorMessage = 'Failed to generate summary';
-    if (error?.response?.status === 401) {
+    let statusCode = 500;
+    
+    if (error?.message === 'Request timeout') {
+      errorMessage = 'Request timed out. The text might be too long or the service is busy. Please try again with shorter text.';
+      statusCode = 408;
+    } else if (error?.response?.status === 401) {
       errorMessage = 'AI service authentication failed. Please contact support.';
+      statusCode = 401;
     } else if (error?.response?.status === 429) {
       errorMessage = 'Service temporarily overwhelmed. Please try again in a moment.';
+      statusCode = 429;
+    } else if (error?.response?.status === 400) {
+      errorMessage = 'Invalid request to AI service. Please try with different text.';
+      statusCode = 400;
+    } else if (!process.env.OPENAI_API_KEY) {
+      errorMessage = 'AI service not configured. Please contact support.';
+      statusCode = 500;
     }
     
     return NextResponse.json({ 
       success: false, 
-      error: errorMessage 
-    }, { status: 500 });
+      error: errorMessage,
+      debug: process.env.NODE_ENV === 'development' ? error?.message : undefined
+    }, { status: statusCode });
   }
-}
