@@ -18,4 +18,4 @@ services:
           type: web
           name: any-print-summarizer
           property: host
-    autoDeploy: false
+    autoDeploy: true
