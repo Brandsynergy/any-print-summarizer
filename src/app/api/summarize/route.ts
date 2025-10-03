@@ -14,15 +14,16 @@ function getOpenAIClient() {
 }
 
 // Helper function to preprocess and optimize text
-function preprocessText(text: string): string {
+function preprocessText(text: string, mode: string = 'standard'): string {
   // Clean up the text
   let cleanedText = text
     .replace(/\s+/g, ' ')  // Replace multiple spaces with single space
     .replace(/\n+/g, '\n') // Replace multiple newlines with single newline
     .trim();
   
-  // If text is very long, truncate to avoid excessive API costs and processing time
-  const maxLength = 8000; // Roughly 6000 tokens
+  // Adjust max length based on mode
+  // Academic mode allows longer input text for more comprehensive analysis
+  const maxLength = mode === 'academic' ? 15000 : 8000; // Academic: ~12k tokens, Standard: ~6k tokens
   if (cleanedText.length > maxLength) {
     cleanedText = cleanedText.substring(0, maxLength) + '...';
   }
@@ -32,7 +33,7 @@ function preprocessText(text: string): string {
 
 export async function POST(request: NextRequest) {
   try {
-    const { text } = await request.json();
+    const { text, mode = 'standard' } = await request.json();
 
     if (!text || typeof text !== 'string' || text.trim().length < 50) {
       return NextResponse.json({ 
@@ -49,20 +50,67 @@ export async function POST(request: NextRequest) {
     }
 
     // Preprocess text for optimal performance
-    const processedText = preprocessText(text);
+    const processedText = preprocessText(text, mode);
 
-    // Use a single optimized prompt for both summary and takeaways
-    const combinedPrompt = `Please analyze the following text and provide both a summary and key takeaways:
+    // Create different prompts based on mode
+    let combinedPrompt: string;
+    let maxTokens: number;
+    let systemPrompt: string;
+    
+    if (mode === 'academic') {
+      maxTokens = 12000; // Allow up to ~10,000 words in response
+      systemPrompt = "You are an academic assistant specialized in creating comprehensive, scholarly analyses. Your summaries should be thorough, well-structured, and suitable for research and academic purposes. Use formal language while remaining accessible.";
+      
+      combinedPrompt = `Please provide a comprehensive academic analysis of the following text:
+
+${processedText}
+
+Please respond with the following format:
+
+## ACADEMIC SUMMARY
+[Create a detailed, comprehensive summary (5,000-10,000 words). Include:
+- Thorough analysis of main concepts and themes
+- Critical examination of arguments and evidence
+- Discussion of methodology (if applicable)
+- Contextual background and significance
+- Connections to broader academic fields
+- Evaluation of strengths and limitations
+- Implications for further research or study
+Use academic language and structure, with clear subsections and detailed explanations suitable for scholarly work.]
+
+## 10 CRITICAL INSIGHTS
+[Extract exactly 10 critical academic insights. Format as a numbered list (1-10) with each insight being detailed and analytically rigorous. Focus on:
+- Theoretical implications
+- Methodological contributions
+- Critical arguments
+- Research gaps identified
+- Academic significance
+- Scholarly applications]
+
+## ACADEMIC CONTEXT
+[Provide additional context including:
+- Related academic fields and theories
+- Potential research applications
+- Scholarly significance
+- Connections to existing literature (where apparent from the text)]
+
+Ensure the analysis is thorough, well-reasoned, and suitable for academic research and study purposes.`;
+    } else {
+      maxTokens = 2200; // Standard mode
+      systemPrompt = "You are a helpful assistant that creates clear, educational content suitable for all ages. Focus on making complex topics accessible and interesting.";
+      
+      combinedPrompt = `Please analyze the following text and provide both a summary and key takeaways:
 
 ${processedText}
 
 Please respond with the following format:
 
 ## SUMMARY
-[Create a comprehensive yet concise summary in no more than 1000 words. Make it engaging and easy to understand for a general audience, including children. Keep the language simple but informative.]
+[Create a comprehensive yet concise summary in no more than 2,000 words. Make it engaging and easy to understand for a general audience, including children. Keep the language simple but informative.]
 
 ## 10 KEY TAKEAWAYS
 [Extract exactly 10 key takeaways or lessons. Format as a numbered list (1-10) with each takeaway being concise but meaningful. Focus on actionable insights, important facts, or valuable lessons.]`;
+    }
 
     // Single API call instead of two parallel calls
     const client = getOpenAIClient();
@@ -73,20 +121,23 @@ Please respond with the following format:
       }, { status: 500 });
     }
 
+    // Use GPT-4 for academic mode for better quality, keep GPT-4o-mini for standard
+    const modelToUse = mode === 'academic' ? 'gpt-4' : 'gpt-4o-mini';
+    
     const response = await client.chat.completions.create({
-      model: "gpt-4o-mini", // Faster and more efficient than gpt-3.5-turbo
+      model: modelToUse,
       messages: [
         {
           role: "system",
-          content: "You are a helpful assistant that creates clear, educational content suitable for all ages. Focus on making complex topics accessible and interesting."
+          content: systemPrompt
         },
         {
           role: "user",
           content: combinedPrompt
         }
       ],
-      max_tokens: 2200,
-      temperature: 0.7,
+      max_tokens: maxTokens,
+      temperature: mode === 'academic' ? 0.3 : 0.7, // Lower temperature for academic mode for more focused analysis
     });
 
     const content = response.choices[0]?.message?.content?.trim();
@@ -98,17 +149,20 @@ Please respond with the following format:
       }, { status: 500 });
     }
 
-    // Parse the combined response
+    // Parse the combined response based on mode
     const sections = content.split('## ');
     let summary = '';
     let takeaways = '';
+    let academicContext = '';
 
     for (const section of sections) {
       const trimmedSection = section.trim();
-      if (trimmedSection.startsWith('SUMMARY')) {
-        summary = trimmedSection.replace('SUMMARY', '').trim();
-      } else if (trimmedSection.startsWith('10 KEY TAKEAWAYS')) {
-        takeaways = trimmedSection.replace('10 KEY TAKEAWAYS', '').trim();
+      if (trimmedSection.startsWith('ACADEMIC SUMMARY') || trimmedSection.startsWith('SUMMARY')) {
+        summary = trimmedSection.replace(/^(ACADEMIC SUMMARY|SUMMARY)/, '').trim();
+      } else if (trimmedSection.startsWith('10 CRITICAL INSIGHTS') || trimmedSection.startsWith('10 KEY TAKEAWAYS')) {
+        takeaways = trimmedSection.replace(/^(10 CRITICAL INSIGHTS|10 KEY TAKEAWAYS)/, '').trim();
+      } else if (trimmedSection.startsWith('ACADEMIC CONTEXT')) {
+        academicContext = trimmedSection.replace('ACADEMIC CONTEXT', '').trim();
       }
     }
 
@@ -125,7 +179,7 @@ Please respond with the following format:
       }
     }
 
-    return NextResponse.json({
+    const responseData: any = {
       success: true,
       summary,
       takeaways,
@@ -133,8 +187,16 @@ Please respond with the following format:
         summary: summary.split(/\s+/).length,
         takeaways: takeaways.split(/\s+/).length,
         original: processedText.split(/\s+/).length
-      }
-    });
+      },
+      mode
+    };
+    
+    // Add academic context if available
+    if (mode === 'academic' && academicContext) {
+      responseData.academicContext = academicContext;
+    }
+    
+    return NextResponse.json(responseData);
 
   } catch (error: any) {
     console.error('Summarization error:', error);

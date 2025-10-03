@@ -20,23 +20,51 @@ export function ResultsDisplay({ results, onStartOver }: ResultsDisplayProps) {
     toast.loading('Creating your PDF...', { id: 'pdf-download' });
 
     try {
-      // Create PDF using jsPDF
-      const doc = new jsPDF();
+      // Create PDF using jsPDF with A4 format for better academic content support
+      const doc = new jsPDF('p', 'mm', 'a4');
       
-      // Set up the PDF
+      // Set up the PDF with more space for academic content
       const pageWidth = doc.internal.pageSize.getWidth();
       const pageHeight = doc.internal.pageSize.getHeight();
-      const margin = 20;
-      const lineHeight = 7;
+      const margin = 15; // Smaller margins for more content
+      const lineHeight = results.summaryMode === 'academic' ? 6 : 7;
       const maxWidth = pageWidth - (2 * margin);
       
-      let yPosition = margin + 20;
+      let yPosition = margin + 15;
+      
+      // Helper function to add text with pagination
+      const addTextWithPagination = (text: string, fontSize: number = 12, isBold: boolean = false) => {
+        doc.setFontSize(fontSize);
+        doc.setFont('helvetica', isBold ? 'bold' : 'normal');
+        const lines = doc.splitTextToSize(text, maxWidth);
+        
+        for (const line of lines) {
+          if (yPosition > pageHeight - margin - 15) {
+            doc.addPage();
+            yPosition = margin + 15;
+          }
+          doc.text(line, margin, yPosition);
+          yPosition += lineHeight;
+        }
+      };
       
       // Title
-      doc.setFontSize(24);
+      const title = results.summaryMode === 'academic' 
+        ? 'Academic Analysis Report' 
+        : 'Summary Report';
+      doc.setFontSize(22);
       doc.setFont('helvetica', 'bold');
-      doc.text('My Summary Report', margin, yPosition);
-      yPosition += 15;
+      doc.text(title, margin, yPosition);
+      yPosition += 12;
+      
+      // Mode indicator
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'italic');
+      const modeText = results.summaryMode === 'academic' 
+        ? 'Comprehensive Academic Analysis' 
+        : 'Standard Summary';
+      doc.text(`Mode: ${modeText}`, margin, yPosition);
+      yPosition += 8;
       
       // Date
       doc.setFontSize(10);
@@ -44,76 +72,114 @@ export function ResultsDisplay({ results, onStartOver }: ResultsDisplayProps) {
       const currentDate = new Date().toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'long',
-        day: 'numeric'
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
       });
       doc.text(`Generated on: ${currentDate}`, margin, yPosition);
-      yPosition += 20;
+      yPosition += 15;
       
       // Summary Section
-      doc.setFontSize(18);
+      doc.setFontSize(16);
       doc.setFont('helvetica', 'bold');
-      doc.text('SUMMARY', margin, yPosition);
+      const summaryTitle = results.summaryMode === 'academic' 
+        ? 'ACADEMIC SUMMARY' 
+        : 'SUMMARY';
+      doc.text(summaryTitle, margin, yPosition);
       yPosition += 10;
       
       // Summary content
-      doc.setFontSize(12);
-      doc.setFont('helvetica', 'normal');
-      const summaryLines = doc.splitTextToSize(results.summary, maxWidth);
+      addTextWithPagination(results.summary, 11);
+      yPosition += 10;
       
-      for (const line of summaryLines) {
-        if (yPosition > pageHeight - margin) {
-          doc.addPage();
-          yPosition = margin + 20;
-        }
-        doc.text(line, margin, yPosition);
-        yPosition += lineHeight;
-      }
-      
-      yPosition += 15;
-      
-      // Key Takeaways Section
-      if (yPosition > pageHeight - 50) {
+      // Key Takeaways/Critical Insights Section
+      if (yPosition > pageHeight - 40) {
         doc.addPage();
-        yPosition = margin + 20;
+        yPosition = margin + 15;
       }
       
-      doc.setFontSize(18);
+      doc.setFontSize(16);
       doc.setFont('helvetica', 'bold');
-      doc.text('KEY TAKEAWAYS', margin, yPosition);
+      const takeawaysTitle = results.summaryMode === 'academic' 
+        ? 'CRITICAL INSIGHTS' 
+        : 'KEY TAKEAWAYS';
+      doc.text(takeawaysTitle, margin, yPosition);
       yPosition += 10;
       
       // Takeaways content
-      doc.setFontSize(12);
-      doc.setFont('helvetica', 'normal');
-      const takeawaysLines = doc.splitTextToSize(results.takeaways, maxWidth);
+      addTextWithPagination(results.takeaways, 11);
+      yPosition += 10;
       
-      for (const line of takeawaysLines) {
-        if (yPosition > pageHeight - margin) {
+      // Academic Context Section (only for academic mode)
+      if (results.summaryMode === 'academic' && results.academicContext) {
+        if (yPosition > pageHeight - 40) {
           doc.addPage();
-          yPosition = margin + 20;
+          yPosition = margin + 15;
         }
-        doc.text(line, margin, yPosition);
-        yPosition += lineHeight;
+        
+        doc.setFontSize(16);
+        doc.setFont('helvetica', 'bold');
+        doc.text('ACADEMIC CONTEXT', margin, yPosition);
+        yPosition += 10;
+        
+        addTextWithPagination(results.academicContext, 11);
       }
       
-      // Footer
+      // Statistics Section
+      if (yPosition > pageHeight - 60) {
+        doc.addPage();
+        yPosition = margin + 15;
+      }
+      
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text('STATISTICS', margin, yPosition);
+      yPosition += 8;
+      
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      const stats = [
+        `Original text: ${results.wordCount.original} words`,
+        `Summary: ${results.wordCount.summary} words`,
+        `Takeaways: ${results.wordCount.takeaways} words`,
+        `Compression ratio: ${Math.round((results.wordCount.summary / results.wordCount.original) * 100)}%`,
+        `Analysis mode: ${results.summaryMode === 'academic' ? 'Academic (Comprehensive)' : 'Standard (General)'}`
+      ];
+      
+      for (const stat of stats) {
+        doc.text(stat, margin, yPosition);
+        yPosition += 5;
+      }
+      
+      // Footer with page numbers
       const totalPages = doc.getNumberOfPages();
       for (let i = 1; i <= totalPages; i++) {
         doc.setPage(i);
         doc.setFontSize(8);
         doc.setFont('helvetica', 'italic');
-        doc.text(
-          'Generated by Any Print Summarizer - Making learning accessible for everyone!',
-          margin,
-          pageHeight - 10
-        );
+        
+        // Footer text
+        const footerText = results.summaryMode === 'academic'
+          ? 'Generated by Any Print Summarizer - Academic Analysis Mode'
+          : 'Generated by Any Print Summarizer - Making learning accessible for everyone!';
+        
+        doc.text(footerText, margin, pageHeight - 6);
+        
+        // Page number
+        doc.text(`Page ${i} of ${totalPages}`, pageWidth - margin - 20, pageHeight - 6);
       }
       
-      // Generate filename and download
-      const filename = `summary-report-${new Date().toISOString().split('T')[0]}.pdf`;
+      // Generate filename with mode indicator
+      const modePrefix = results.summaryMode === 'academic' ? 'academic' : 'standard';
+      const filename = `${modePrefix}-summary-${new Date().toISOString().split('T')[0]}.pdf`;
       doc.save(filename);
       
-      toast.success('PDF downloaded successfully! 📄✨', { id: 'pdf-download' });
+      toast.success(
+        results.summaryMode === 'academic' 
+          ? 'Academic analysis PDF downloaded! 📚✨' 
+          : 'PDF downloaded successfully! 📄✨', 
+        { id: 'pdf-download' }
+      );
     } catch (error: any) {
       console.error('PDF generation error:', error);
       toast.error(`Failed to generate PDF: ${error.message || 'Unknown error'}`, { id: 'pdf-download' });
@@ -153,15 +219,27 @@ export function ResultsDisplay({ results, onStartOver }: ResultsDisplayProps) {
           {results.isBookSummary ? '📚' : '🎉'}
         </motion.div>
         <h2 className="text-4xl font-bold text-gray-800 font-comic mb-2">
-          {results.isBookSummary 
-            ? 'Found Your Book! Here\'s the Summary! 📖' 
-            : 'Ta-da! Your Summary is Ready! 🌟'
+          {results.summaryMode === 'academic' 
+            ? (results.isBookSummary 
+                ? 'Academic Analysis of Your Book! 📚' 
+                : 'Comprehensive Academic Analysis Complete! 🎓'
+              )
+            : (results.isBookSummary 
+                ? 'Found Your Book! Here\'s the Summary! 📖' 
+                : 'Ta-da! Your Summary is Ready! 🌟'
+              )
           }
         </h2>
         <p className="text-lg text-gray-600 font-comic">
-          {results.isBookSummary 
-            ? 'I searched the internet and found detailed information about this book!'
-            : 'Here\'s everything you need to know, made simple and fun!'
+          {results.summaryMode === 'academic'
+            ? (results.isBookSummary 
+                ? 'I found detailed book information and created a comprehensive academic analysis!'
+                : 'Here\'s a detailed academic analysis perfect for research and studying!'
+              )
+            : (results.isBookSummary 
+                ? 'I searched the internet and found detailed information about this book!'
+                : 'Here\'s everything you need to know, made simple and fun!'
+              )
           }
         </p>
       </motion.div>
@@ -313,10 +391,11 @@ export function ResultsDisplay({ results, onStartOver }: ResultsDisplayProps) {
             </div>
             <div>
               <h3 className="text-2xl font-bold text-gray-800 font-comic">
-                Summary 📝
+                {results.summaryMode === 'academic' ? 'Academic Summary 🎓' : 'Summary 📝'}
               </h3>
               <p className="text-sm text-gray-500">
-                {results.wordCount.summary} words • Easy to read!
+                {results.wordCount.summary} words • 
+                {results.summaryMode === 'academic' ? 'Comprehensive analysis' : 'Easy to read!'}
               </p>
             </div>
           </div>
@@ -352,10 +431,16 @@ export function ResultsDisplay({ results, onStartOver }: ResultsDisplayProps) {
             </div>
             <div>
               <h3 className="text-2xl font-bold text-gray-800 font-comic">
-                10 Cool Things to Learn! ✨
+                {results.summaryMode === 'academic' 
+                  ? '10 Critical Academic Insights! 🔬' 
+                  : '10 Cool Things to Learn! ✨'
+                }
               </h3>
               <p className="text-sm text-gray-500">
-                Key takeaways and lessons
+                {results.summaryMode === 'academic' 
+                  ? 'Critical insights and scholarly analysis'
+                  : 'Key takeaways and lessons'
+                }
               </p>
             </div>
           </div>
@@ -376,6 +461,47 @@ export function ResultsDisplay({ results, onStartOver }: ResultsDisplayProps) {
           </div>
         </div>
       </motion.div>
+
+      {/* Academic Context Section - Only for Academic Mode */}
+      {results.summaryMode === 'academic' && results.academicContext && (
+        <motion.div
+          initial={{ opacity: 0, x: -50 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.7 }}
+          className="bg-white rounded-2xl shadow-xl p-8 border-l-4 border-amber-500"
+        >
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center space-x-3">
+              <div className="bg-amber-100 p-3 rounded-full">
+                <div className="text-2xl">🎓</div>
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold text-gray-800 font-comic">
+                  Academic Context 📚
+                </h3>
+                <p className="text-sm text-gray-500">
+                  Additional scholarly context and applications
+                </p>
+              </div>
+            </div>
+            <motion.button
+              onClick={() => handleCopyText(results.academicContext || '', 'Academic context')}
+              className="btn btn-secondary btn-md inline-flex items-center space-x-2"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Copy className="h-4 w-4" />
+              <span>Copy</span>
+            </motion.button>
+          </div>
+          
+          <div className="prose prose-lg max-w-none">
+            <div className="text-gray-700 leading-relaxed font-comic text-lg whitespace-pre-wrap">
+              {results.academicContext}
+            </div>
+          </div>
+        </motion.div>
+      )}
 
       {/* Stats */}
       <motion.div

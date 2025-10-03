@@ -71,6 +71,8 @@ async function preprocessImageForOCR(file: File): Promise<File> {
   });
 }
 
+export type SummaryMode = 'standard' | 'academic';
+
 export interface ProcessingResult {
   summary: string;
   takeaways: string;
@@ -79,6 +81,8 @@ export interface ProcessingResult {
     takeaways: number;
     original: number;
   };
+  summaryMode: SummaryMode;
+  academicContext?: string;
   isBookSummary?: boolean;
   bookInfo?: {
     title: string;
@@ -107,6 +111,7 @@ export interface ProcessingStep {
 export default function HomePage() {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [currentStep, setCurrentStep] = useState<'upload' | 'processing' | 'results'>('upload');
+  const [summaryMode, setSummaryMode] = useState<SummaryMode>('standard');
   const [processingSteps, setProcessingSteps] = useState<ProcessingStep[]>([
     {
       id: 'upload',
@@ -371,7 +376,21 @@ export default function HomePage() {
       // Step 4: Create Summary
       updateStepStatus('summarize', 'active');
       
-      console.log('Starting summarization...');
+      // Update step description based on mode
+      setProcessingSteps(prev => 
+        prev.map(step => 
+          step.id === 'summarize' 
+            ? { 
+                ...step, 
+                description: summaryMode === 'academic' 
+                  ? 'Creating comprehensive academic analysis...' 
+                  : 'Making a short and easy summary'
+              }
+            : step
+        )
+      );
+      
+      console.log(`Starting ${summaryMode} summarization...`);
       console.log('Text to summarize:', finalText.substring(0, 200) + '...');
       
       const summaryResponse = await fetch('/api/summarize', {
@@ -379,7 +398,10 @@ export default function HomePage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ text: finalText }),
+        body: JSON.stringify({ 
+          text: finalText, 
+          mode: summaryMode 
+        }),
       });
       
       if (!summaryResponse.ok) {
@@ -392,6 +414,7 @@ export default function HomePage() {
       // Add book information to results if available
       const finalResults = {
         ...summaryData,
+        summaryMode,
         isBookSummary,
         bookInfo
       };
@@ -444,6 +467,53 @@ export default function HomePage() {
             plus 10 cool things you can learn! For book covers, I'll even search the internet 
             to get detailed information about the book! 📚🌟
           </p>
+          
+          {/* Summary Mode Selector */}
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="mt-8 max-w-md mx-auto"
+          >
+            <div className="bg-white rounded-2xl p-6 shadow-lg border-2 border-gray-100">
+              <h3 className="text-lg font-bold text-gray-800 mb-4 font-comic text-center">
+                Choose Your Summary Style 🎯
+              </h3>
+              <div className="flex gap-4">
+                <button
+                  onClick={() => setSummaryMode('standard')}
+                  className={`flex-1 py-3 px-4 rounded-xl font-comic font-semibold transition-all duration-200 ${
+                    summaryMode === 'standard'
+                      ? 'bg-blue-500 text-white shadow-lg transform scale-105'
+                      : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                  }`}
+                >
+                  <div className="text-2xl mb-1">🌟</div>
+                  <div className="text-sm">Standard</div>
+                  <div className="text-xs opacity-75">Up to 2,000 words</div>
+                </button>
+                <button
+                  onClick={() => setSummaryMode('academic')}
+                  className={`flex-1 py-3 px-4 rounded-xl font-comic font-semibold transition-all duration-200 ${
+                    summaryMode === 'academic'
+                      ? 'bg-purple-500 text-white shadow-lg transform scale-105'
+                      : 'bg-purple-100 text-purple-700 hover:bg-purple-200'
+                  }`}
+                >
+                  <div className="text-2xl mb-1">🎓</div>
+                  <div className="text-sm">Academic</div>
+                  <div className="text-xs opacity-75">Up to 10,000 words</div>
+                </button>
+              </div>
+              <div className="mt-4 text-center">
+                <p className="text-xs text-gray-600 font-comic">
+                  {summaryMode === 'standard' 
+                    ? 'Perfect for quick understanding and general reading 📖' 
+                    : 'Detailed analysis for research, studying, and in-depth learning 📚'}
+                </p>
+              </div>
+            </div>
+          </motion.div>
         </motion.div>
 
         {/* Main Content Area */}
