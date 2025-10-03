@@ -169,7 +169,7 @@ Please respond with the following format:
     
     // Method 1: Try parsing with ## headers
     const sections = content.split(/##\s*/g);
-    console.log('Sections found:', sections.length, sections.map(s => s.substring(0, 50))); // Debug
+    console.log('Sections found:', sections.length, sections.map((s: string) => s.substring(0, 50))); // Debug
     
     for (let i = 0; i < sections.length; i++) {
       const section = sections[i].trim();
