@@ -21,9 +21,9 @@ function preprocessText(text: string, mode: string = 'standard'): string {
     .replace(/\n+/g, '\n') // Replace multiple newlines with single newline
     .trim();
   
-  // Adjust max length based on mode
-  // Academic mode allows longer input text for more comprehensive analysis
-  const maxLength = mode === 'academic' ? 15000 : 8000; // Academic: ~12k tokens, Standard: ~6k tokens
+    // Adjust max length based on mode
+    // Academic mode allows longer input text for more comprehensive analysis  
+    const maxLength = mode === 'academic' ? 20000 : 8000; // Academic: ~16k tokens, Standard: ~6k tokens
   if (cleanedText.length > maxLength) {
     cleanedText = cleanedText.substring(0, maxLength) + '...';
   }
@@ -58,45 +58,72 @@ export async function POST(request: NextRequest) {
     let systemPrompt: string;
     
     if (mode === 'academic') {
-      // GPT-4 Turbo supports up to 128k tokens context and 4k completion
-      maxTokens = 4000; // Safe limit for comprehensive academic analysis
+      // GPT-4o supports comprehensive analysis - increase for thorough academic work
+      maxTokens = 8000; // Higher limit for comprehensive academic analysis (8,000-10,000+ words)
       systemPrompt = "Write as an experienced academic researcher who thinks deeply about complex topics. Your writing should feel natural and authentic - like a knowledgeable colleague sharing insights over coffee. Vary your sentence structures, use personal observations, and let your genuine curiosity about the subject shine through. Write with the confidence of someone who has spent years in their field, but keep things accessible and engaging.";
       
-      combinedPrompt = `I'd like you to dive deep into this text and share your thoughts as someone who really knows their stuff academically. Write naturally - like you're discussing this material with a colleague over lunch, but with the depth and insight of your expertise.
+      combinedPrompt = `As an experienced academic researcher, provide a comprehensive scholarly analysis of this text. Write with the natural voice of an expert who is genuinely engaged with the material, but maintain the thoroughness and rigor expected in academic work.
 
 ${processedText}
 
-Structure your response with these sections, but let your writing flow naturally:
+Provide a detailed analysis following this structure:
 
 ## ACADEMIC SUMMARY
 
-Give me your comprehensive take on this (aim for 1,500-3,000 words). What really stands out to you? Think about:
-- What are the core ideas and how do they connect?
-- Where do you see strong arguments, and where might there be gaps?
-- How does this fit into the bigger academic picture?
-- What would you tell a colleague about why this matters?
-- Where do you see opportunities for future exploration?
+Deliver an extensive, comprehensive academic summary (6,000-8,000 words minimum). This should be a thorough scholarly analysis that includes:
 
-Write like you're genuinely engaged with the material - let your academic curiosity show through.
+**Conceptual Framework & Core Themes:**
+- Detailed examination of primary concepts, theories, and central arguments
+- Analysis of how key ideas interconnect and build upon each other
+- Identification of underlying theoretical frameworks and paradigms
+
+**Critical Analysis & Evidence Evaluation:**
+- Rigorous assessment of arguments, evidence quality, and logical consistency
+- Discussion of methodological approaches, strengths, and potential limitations
+- Evaluation of data interpretation and conclusions drawn
+
+**Academic Context & Significance:**
+- Positioning within relevant academic fields and existing literature
+- Analysis of contributions to current scholarly understanding
+- Discussion of how this work advances or challenges established knowledge
+
+**Interdisciplinary Connections:**
+- Exploration of relationships to other academic disciplines
+- Analysis of cross-field implications and applications
+- Discussion of methodological innovations or theoretical contributions
+
+**Critical Assessment:**
+- Balanced evaluation of strengths and limitations
+- Identification of potential gaps, assumptions, or areas for improvement
+- Discussion of alternative interpretations or perspectives
+
+**Future Research Directions:**
+- Analysis of implications for future scholarly inquiry
+- Identification of emerging questions and research opportunities
+- Discussion of potential applications and extensions
+
+Write with scholarly depth while maintaining engagement. Use varied paragraph structures, sophisticated analysis, and demonstrate genuine intellectual curiosity about the subject matter.
 
 ## 10 CRITICAL INSIGHTS
 
-Share 10 key insights that jumped out at you (number them 1-10). These should be the kinds of observations that show your analytical depth:
-- Theoretical connections you're seeing
-- Methodological strengths or concerns
-- Arguments that particularly caught your attention
-- Gaps that future researchers might explore
-- Why this work matters in the broader academic landscape
+Provide 10 substantial critical insights (numbered 1-10), each being a detailed analytical observation of 150-300 words. Focus on:
+- Theoretical implications and contributions
+- Methodological innovations or concerns
+- Significant arguments and their broader implications
+- Identified research gaps and future opportunities
+- Academic significance and scholarly applications
+- Connections to broader intellectual traditions
 
 ## ACADEMIC CONTEXT
 
-Help me understand where this fits in the bigger picture:
-- What fields does this connect to?
-- How might researchers use this work?
-- Why should the academic community care about this?
-- What related work comes to mind?
+Provide comprehensive contextual analysis (1,000-1,500 words) covering:
+- Detailed discussion of related academic fields and theoretical frameworks
+- Analysis of potential research applications and methodological contributions
+- Assessment of scholarly significance and impact on academic discourse
+- Connections to existing literature and intellectual traditions
+- Discussion of how this work fits into current academic conversations
 
-Write with the authority of your experience, but keep it engaging and accessible.`;
+Maintain scholarly rigor throughout while writing in an engaging, naturally flowing style that reflects genuine academic expertise and curiosity.`;
     } else {
       maxTokens = 2200; // Standard mode
       systemPrompt = "Write like a thoughtful teacher who genuinely cares about helping people understand things. Use your own voice - be conversational, ask rhetorical questions, share observations, and write as if you're explaining something fascinating to a curious friend. Mix up your sentence lengths and structures naturally. Don't be afraid to show enthusiasm or use everyday language alongside more formal terms.";
