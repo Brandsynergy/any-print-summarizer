@@ -1,0 +1,32 @@
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Shield background -->
+  <path d="M20 25C20 20.5817 23.5817 17 28 17H92C96.4183 17 100 20.5817 100 25V45C100 48.5 98.5 52 95 55L62 88C60.8 89.2 59.2 89.2 58 88L25 55C21.5 52 20 48.5 20 45V25Z" fill="#B8956B"/>
+  
+  <!-- Stars -->
+  <g fill="white">
+    <!-- Left star -->
+    <path d="M35 30L36.5 34H41L37.5 36.5L39 41L35 38L31 41L32.5 36.5L29 34H33.5L35 30Z"/>
+    <!-- Center star -->
+    <path d="M60 30L61.5 34H66L62.5 36.5L64 41L60 38L56 41L57.5 36.5L54 34H58.5L60 30Z"/>
+    <!-- Right star -->
+    <path d="M85 30L86.5 34H91L87.5 36.5L89 41L85 38L81 41L82.5 36.5L79 34H83.5L85 30Z"/>
+  </g>
+  
+  <!-- Black banner -->
+  <rect x="22" y="45" width="76" height="25" rx="3" fill="#1a1a1a"/>
+  
+  <!-- MEDIAD text -->
+  <text x="60" y="62" font-family="Arial, sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="white">MEDIAD</text>
+  
+  <!-- Shield stripes -->
+  <g fill="white" opacity="0.9">
+    <rect x="30" y="72" width="4" height="35"/>
+    <rect x="38" y="72" width="4" height="32"/>
+    <rect x="46" y="72" width="4" height="35"/>
+    <rect x="54" y="72" width="4" height="32"/>
+    <rect x="62" y="72" width="4" height="35"/>
+    <rect x="70" y="72" width="4" height="32"/>
+    <rect x="78" y="72" width="4" height="35"/>
+    <rect x="86" y="72" width="4" height="32"/>
+  </g>
+</svg>

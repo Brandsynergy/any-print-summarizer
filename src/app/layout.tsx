@@ -28,10 +28,12 @@ export default function RootLayout({
             <div className="max-w-6xl mx-auto px-4 py-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                <div className="bg-primary-500 text-white p-3 rounded-full">
-                  <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                  </svg>
+                <div className="flex items-center justify-center">
+                  <img 
+                    src="/images/mediad-logo.svg" 
+                    alt="Mediad Innovation Logo" 
+                    className="w-12 h-12"
+                  />
                 </div>
                 <div>
                   <h1 className="text-3xl font-bold bg-gradient-to-r from-primary-600 to-purple-600 bg-clip-text text-transparent">
