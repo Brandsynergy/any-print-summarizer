@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
+import { getServerSession } from "next-auth/next";
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
 
 // Initialize OpenAI client only when needed
 let openai: OpenAI | null = null;
@@ -34,6 +38,51 @@ function preprocessText(text: string, mode: string = 'standard'): string {
 export async function POST(request: NextRequest) {
   try {
     const { text, mode = 'standard' } = await request.json();
+    
+    // Get user session
+    const session = await getServerSession();
+    
+    if (!session?.user?.email) {
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Please sign in to use the summarizer',
+        requiresAuth: true
+      }, { status: 401 });
+    }
+    
+    // Find or create user
+    let user = await prisma.user.findUnique({
+      where: { email: session.user.email }
+    });
+    
+    if (!user) {
+      user = await prisma.user.create({
+        data: {
+          email: session.user.email,
+          name: session.user.name || null
+        }
+      });
+    }
+    
+    // Check access permissions
+    if (mode === 'academic' && !user.isPremium) {
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Academic Analysis requires premium access. Upgrade to unlock unlimited access.',
+        requiresUpgrade: true,
+        upgradeUrl: '/pricing'
+      }, { status: 403 });
+    }
+    
+    // Check free tier limits for standard mode
+    if (mode === 'standard' && !user.isPremium && user.standardUsed >= 2) {
+      return NextResponse.json({ 
+        success: false, 
+        error: 'You have used your 2 free standard summaries. Upgrade for unlimited access.',
+        requiresUpgrade: true,
+        upgradeUrl: '/pricing'
+      }, { status: 403 });
+    }
 
     if (!text || typeof text !== 'string' || text.trim().length < 50) {
       return NextResponse.json({ 
@@ -325,6 +374,35 @@ Write with personality - let your enthusiasm or curiosity show through naturally
     // Add academic context if available
     if (mode === 'academic' && academicContext) {
       responseData.academicContext = academicContext;
+    }
+    
+    // Track usage and store summary
+    try {
+      // Update usage count
+      if (mode === 'standard') {
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { standardUsed: { increment: 1 } }
+        });
+      } else if (mode === 'academic') {
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { academicUsed: { increment: 1 } }
+        });
+      }
+      
+      // Store the summary
+      await prisma.summary.create({
+        data: {
+          userId: user.id,
+          type: mode,
+          title: `${mode} Summary - ${new Date().toLocaleDateString()}`,
+          content: JSON.stringify({ summary, takeaways, academicContext })
+        }
+      });
+    } catch (trackingError) {
+      console.error('Usage tracking error:', trackingError);
+      // Don't fail the request if tracking fails
     }
     
     return NextResponse.json(responseData);
