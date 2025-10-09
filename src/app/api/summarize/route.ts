@@ -60,52 +60,73 @@ export async function POST(request: NextRequest) {
     if (mode === 'academic') {
       // GPT-4o supports comprehensive analysis - increase for thorough academic work
       maxTokens = 8000; // Higher limit for comprehensive academic analysis (8,000-10,000+ words)
-      systemPrompt = "You are an experienced academic researcher providing comprehensive analysis. Create detailed, scholarly content that demonstrates deep understanding of the subject matter. Ensure each section of your response offers unique insights and perspectives. Write with academic rigor while maintaining clarity and engagement.";
+      systemPrompt = "You are a meticulous academic researcher. ABSOLUTELY CRITICAL: Each section must cover completely different aspects - never repeat content, ideas, or analysis between sections. Follow the strict rules for each section precisely. If you repeat content between sections, the analysis will be considered flawed. Demonstrate expertise through unique, non-overlapping insights in each section.";
       
-      combinedPrompt = `Please provide a comprehensive academic analysis of the following text. Create a detailed scholarly examination with three distinct sections, ensuring each section offers unique perspectives without repetition.
+      combinedPrompt = `Analyze this text using three completely different analytical lenses. Each section must focus on distinct aspects with no overlap.
 
 ${processedText}
 
 ## ACADEMIC SUMMARY
 
-Provide a thorough academic analysis (4,000-6,000 words) covering:
+Focus ONLY on content analysis and argument structure (4,000-6,000 words). Do NOT discuss historical context, contemporary relevance, or implications - save those for other sections.
 
-**Core Analysis**: Examine the main concepts, arguments, and theoretical frameworks presented. Analyze the logical structure and evaluate the strength of the evidence provided.
+**What the Text Says (Content Focus)**:
+- Identify and explain the main arguments, claims, and propositions
+- Examine supporting evidence, data, and examples provided
+- Analyze the logical flow and structure of the argument
+- Evaluate internal consistency and coherence
 
-**Critical Evaluation**: Assess the methodological approaches, identify strengths and limitations, and discuss how this work contributes to existing knowledge in the field.
+**How the Argument is Built (Structure Focus)**:
+- Analyze rhetorical strategies and persuasive techniques
+- Examine how evidence is presented and organized
+- Assess the strength of logical connections between ideas
+- Evaluate the effectiveness of the argumentative framework
 
-**Scholarly Significance**: Position this work within relevant academic contexts, discuss its relationship to existing literature, and evaluate its potential impact on future research.
+**Quality Assessment (Evaluation Focus)**:
+- Judge the adequacy and reliability of evidence
+- Assess methodological soundness (if applicable)
+- Identify logical fallacies or weak reasoning
+- Evaluate overall persuasiveness and scholarly merit
 
-Write with academic rigor while maintaining clarity and engagement. Demonstrate deep understanding through sophisticated analysis.
+STRICT RULE: Do not mention historical background, contemporary debates, future implications, or broader academic positioning - these belong in other sections.
 
 ## 10 CRITICAL INSIGHTS
 
-Provide 10 substantial analytical insights (150-250 words each), focusing on different aspects:
+Provide 10 insights (200-300 words each) focusing ONLY on hidden patterns, subtle implications, and deeper meanings that casual readers would miss. Do NOT repeat content from the summary or discuss historical/contemporary context.
 
-1. Theoretical implications and contributions
-2. Methodological innovations or considerations
-3. Evidence quality and interpretation
-4. Connections to broader academic discourse
-5. Potential research applications
-6. Interdisciplinary relevance
-7. Conceptual frameworks and paradigms
-8. Areas for future investigation
-9. Practical implications and applications
-10. Overall scholarly impact and significance
+1. **Underlying Assumptions**: What unstated assumptions does this work rely on?
+2. **Subtle Contradictions**: Are there any internal tensions or contradictions?
+3. **Missing Perspectives**: What viewpoints or voices are absent from this analysis?
+4. **Methodological Blind Spots**: What limitations in approach might affect conclusions?
+5. **Implicit Biases**: What cultural, ideological, or disciplinary biases are present?
+6. **Unexamined Variables**: What factors are overlooked that might be significant?
+7. **Alternative Interpretations**: How else could this evidence be understood?
+8. **Conceptual Gaps**: Where are the theoretical or conceptual weaknesses?
+9. **Logical Vulnerabilities**: Where is the reasoning most susceptible to challenge?
+10. **Hidden Complexities**: What nuances or complexities are underexplored?
 
-Each insight should offer a unique analytical perspective not covered in the summary.
+STRICT RULE: Focus only on critical analysis of what's present in the text. Do not discuss broader academic context or implications.
 
 ## ACADEMIC CONTEXT
 
-Provide contextual analysis (1,000-1,500 words) focusing on:
+Focus ONLY on positioning and relationships (1,200-1,500 words). Do NOT analyze content, arguments, or evidence quality - those were covered above.
 
-**Historical Context**: How this work fits within the evolution of thought in its field and what scholarly traditions it builds upon or challenges.
+**Historical Academic Lineage**:
+- Trace intellectual traditions this work builds upon
+- Identify theoretical schools of thought it represents
+- Explain how it fits in the evolution of ideas in its field
 
-**Contemporary Relevance**: Its relationship to current academic debates, research trends, and scholarly communities.
+**Contemporary Academic Landscape**:
+- Position within current scholarly debates and conversations
+- Identify which academic communities would find this relevant
+- Relate to ongoing research programs and initiatives
 
-**Future Directions**: Potential influence on future scholarship and emerging research opportunities.
+**Future Academic Trajectory**:
+- Predict potential influence on future scholarship
+- Identify research directions this might inspire
+- Assess likely reception by different academic audiences
 
-Ensure this section complements rather than repeats information from previous sections.`;
+STRICT RULE: Focus only on academic positioning and relationships. Do not re-analyze content, arguments, or evidence quality.`;
     } else {
       maxTokens = 2200; // Standard mode
       systemPrompt = "Write like a thoughtful teacher who genuinely cares about helping people understand things. Use your own voice - be conversational, ask rhetorical questions, share observations, and write as if you're explaining something fascinating to a curious friend. Mix up your sentence lengths and structures naturally. Don't be afraid to show enthusiasm or use everyday language alongside more formal terms.";
