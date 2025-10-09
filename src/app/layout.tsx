@@ -54,7 +54,7 @@ export default function RootLayout({
           <footer className="bg-white border-t-2 border-primary-100 mt-12">
             <div className="max-w-6xl mx-auto px-4 py-6 text-center">
               <p className="text-gray-600 font-comic">
-                Made with ❤️ to make learning fun and accessible for everyone!
+                © Mediad Innovation 2025
               </p>
             </div>
           </footer>
