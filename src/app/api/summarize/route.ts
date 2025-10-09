@@ -60,70 +60,60 @@ export async function POST(request: NextRequest) {
     if (mode === 'academic') {
       // GPT-4o supports comprehensive analysis - increase for thorough academic work
       maxTokens = 8000; // Higher limit for comprehensive academic analysis (8,000-10,000+ words)
-      systemPrompt = "Write as an experienced academic researcher who thinks deeply about complex topics. Your writing should feel natural and authentic - like a knowledgeable colleague sharing insights over coffee. Vary your sentence structures, use personal observations, and let your genuine curiosity about the subject shine through. Write with the confidence of someone who has spent years in their field, but keep things accessible and engaging.";
+      systemPrompt = "You are a distinguished academic researcher with deep expertise in your field. Your analysis must demonstrate intellectual sophistication and original thinking. CRITICAL: Never repeat content between sections - each section must offer completely unique perspectives and insights. Write with the authority of someone who has spent decades mastering their discipline, offering nuanced observations that only a true expert would make. Your analysis should reveal layers of meaning that casual readers would miss. Maintain scholarly rigor while writing in a naturally engaging voice that reflects genuine intellectual passion for the subject matter.";
       
-      combinedPrompt = `As an experienced academic researcher, provide a comprehensive scholarly analysis of this text. Write with the natural voice of an expert who is genuinely engaged with the material, but maintain the thoroughness and rigor expected in academic work.
+      combinedPrompt = `You are a distinguished academic researcher conducting a comprehensive scholarly analysis. Each section below requires DISTINCTLY DIFFERENT content - avoid any repetition between sections. Demonstrate deep expertise and original thinking.
 
 ${processedText}
 
-Provide a detailed analysis following this structure:
+CRITICAL INSTRUCTION: Each section must contain completely unique content. Do NOT repeat ideas, concepts, or analysis across sections. Show intellectual sophistication by addressing different dimensions of the material.
 
 ## ACADEMIC SUMMARY
 
-Deliver an extensive, comprehensive academic summary (6,000-8,000 words minimum). This should be a thorough scholarly analysis that includes:
+Produce a comprehensive academic summary (6,000-8,000 words) that demonstrates mastery of the subject matter. This section is your PRIMARY ANALYSIS - cover the material's essence completely:
 
-**Conceptual Framework & Core Themes:**
-- Detailed examination of primary concepts, theories, and central arguments
-- Analysis of how key ideas interconnect and build upon each other
-- Identification of underlying theoretical frameworks and paradigms
+1. **Opening Analysis (800-1000 words)**: Begin with the most compelling aspects of the work. What immediately strikes you as significant? Provide your expert assessment of the work's central proposition and its intellectual merit.
 
-**Critical Analysis & Evidence Evaluation:**
-- Rigorous assessment of arguments, evidence quality, and logical consistency
-- Discussion of methodological approaches, strengths, and potential limitations
-- Evaluation of data interpretation and conclusions drawn
+2. **Structural Examination (1200-1500 words)**: Dissect how the argument is constructed. Analyze the logical progression, examine how evidence is presented, evaluate the coherence of the overall framework. This is about HOW the work makes its case.
 
-**Academic Context & Significance:**
-- Positioning within relevant academic fields and existing literature
-- Analysis of contributions to current scholarly understanding
-- Discussion of how this work advances or challenges established knowledge
+3. **Content Deep-Dive (1500-2000 words)**: Examine the substantive content in detail. What specific claims are made? What evidence supports them? Which arguments are strongest/weakest? Focus on WHAT is being argued.
 
-**Interdisciplinary Connections:**
-- Exploration of relationships to other academic disciplines
-- Analysis of cross-field implications and applications
-- Discussion of methodological innovations or theoretical contributions
+4. **Methodological Assessment (1000-1200 words)**: If applicable, evaluate research methods, data collection, analytical approaches. How sound is the methodology? What are the procedural strengths and limitations?
 
-**Critical Assessment:**
-- Balanced evaluation of strengths and limitations
-- Identification of potential gaps, assumptions, or areas for improvement
-- Discussion of alternative interpretations or perspectives
+5. **Intellectual Positioning (800-1000 words)**: Where does this work stand intellectually? How does it relate to major schools of thought? What intellectual tradition does it represent or challenge?
 
-**Future Research Directions:**
-- Analysis of implications for future scholarly inquiry
-- Identification of emerging questions and research opportunities
-- Discussion of potential applications and extensions
+6. **Evaluative Conclusion (700-800 words)**: Your expert judgment on the work's overall contribution. What does it achieve? Where does it fall short? What is its lasting value?
 
-Write with scholarly depth while maintaining engagement. Use varied paragraph structures, sophisticated analysis, and demonstrate genuine intellectual curiosity about the subject matter.
+Write as a true expert who has spent years thinking about these issues. Show genuine intellectual engagement.
 
 ## 10 CRITICAL INSIGHTS
 
-Provide 10 substantial critical insights (numbered 1-10), each being a detailed analytical observation of 150-300 words. Focus on:
-- Theoretical implications and contributions
-- Methodological innovations or concerns
-- Significant arguments and their broader implications
-- Identified research gaps and future opportunities
-- Academic significance and scholarly applications
-- Connections to broader intellectual traditions
+Provide 10 UNIQUE analytical insights (200-300 words each). These must be DIFFERENT from anything in your summary. Each insight should be a distinctive observation that shows your expertise:
+
+1. Focus on HIDDEN IMPLICATIONS not obvious to casual readers
+2. Identify SUBTLE CONNECTIONS to broader intellectual movements
+3. Spot METHODOLOGICAL INNOVATIONS or flaws others might miss
+4. Recognize THEORETICAL CONTRIBUTIONS that advance the field
+5. Find PRACTICAL APPLICATIONS beyond the obvious
+6. Identify UNEXAMINED ASSUMPTIONS in the work
+7. Spot INTERDISCIPLINARY BRIDGES the work creates
+8. Recognize PARADIGM SHIFTS the work represents or suggests
+9. Identify RESEARCH GAPS the work reveals but doesn't address
+10. Assess the work's TRANSFORMATIVE POTENTIAL for the field
+
+Each insight must reveal something new - think like a peer reviewer offering sophisticated commentary.
 
 ## ACADEMIC CONTEXT
 
-Provide comprehensive contextual analysis (1,000-1,500 words) covering:
-- Detailed discussion of related academic fields and theoretical frameworks
-- Analysis of potential research applications and methodological contributions
-- Assessment of scholarly significance and impact on academic discourse
-- Connections to existing literature and intellectual traditions
-- Discussion of how this work fits into current academic conversations
+This section must be ENTIRELY DIFFERENT from both previous sections. Focus specifically on PLACEMENT and POSITIONING (1200-1500 words):
 
-Maintain scholarly rigor throughout while writing in an engaging, naturally flowing style that reflects genuine academic expertise and curiosity.`;
+**Historical Scholarly Context (400-500 words)**: Where does this work fit in the evolution of thought in its field? What came before that led to this? What scholarly conversations does it join?
+
+**Contemporary Academic Landscape (400-500 words)**: How does this work relate to current debates and trends? Which contemporary scholars would find this relevant? What current research programs does it support or challenge?
+
+**Disciplinary Impact Potential (400-500 words)**: How might this work influence future scholarship? What new research directions might it spawn? How could it reshape academic discourse?
+
+Each paragraph must add new information not covered elsewhere. Show your knowledge of the broader academic ecosystem.`;
     } else {
       maxTokens = 2200; // Standard mode
       systemPrompt = "Write like a thoughtful teacher who genuinely cares about helping people understand things. Use your own voice - be conversational, ask rhetorical questions, share observations, and write as if you're explaining something fascinating to a curious friend. Mix up your sentence lengths and structures naturally. Don't be afraid to show enthusiasm or use everyday language alongside more formal terms.";
