@@ -68,27 +68,39 @@ ${processedText}
 
 ## ACADEMIC SUMMARY
 
-Focus ONLY on content analysis and argument structure (4,000-6,000 words). Do NOT discuss historical context, contemporary relevance, or implications - save those for other sections.
+Provide an extensive, detailed academic analysis (MINIMUM 4,000-6,000 words). Focus ONLY on content analysis and argument structure. Do NOT discuss historical context, contemporary relevance, or broader implications - save those for other sections.
 
-**What the Text Says (Content Focus)**:
-- Identify and explain the main arguments, claims, and propositions
-- Examine supporting evidence, data, and examples provided
-- Analyze the logical flow and structure of the argument
-- Evaluate internal consistency and coherence
+**PART 1: What the Text Says (Content Deep-Dive - 1,500-2,000 words)**:
+Provide a thorough, comprehensive examination of the content:
+- Identify and explain ALL main arguments, claims, and propositions in detail
+- Examine every piece of supporting evidence, data, examples, and citations provided
+- Analyze the logical flow and structure of each argument section by section
+- Evaluate internal consistency and coherence throughout the entire work
+- Discuss key concepts, definitions, and terminology used
+- Explain complex ideas and theories presented in accessible but scholarly language
+- Identify underlying premises and foundational assumptions
 
-**How the Argument is Built (Structure Focus)**:
-- Analyze rhetorical strategies and persuasive techniques
-- Examine how evidence is presented and organized
-- Assess the strength of logical connections between ideas
-- Evaluate the effectiveness of the argumentative framework
+**PART 2: How the Argument is Constructed (Structural Analysis - 1,500-2,000 words)**:
+Provide detailed analysis of the argumentative framework:
+- Analyze rhetorical strategies, persuasive techniques, and stylistic choices
+- Examine how evidence is presented, organized, and sequenced for maximum effect
+- Assess the strength and effectiveness of logical connections between different ideas
+- Evaluate the overall argumentative framework and its scholarly sophistication
+- Discuss the author's approach to building credibility and authority
+- Analyze transitions, organization patterns, and structural choices
+- Examine how counterarguments are addressed or anticipated
 
-**Quality Assessment (Evaluation Focus)**:
-- Judge the adequacy and reliability of evidence
-- Assess methodological soundness (if applicable)
-- Identify logical fallacies or weak reasoning
-- Evaluate overall persuasiveness and scholarly merit
+**PART 3: Quality and Rigor Assessment (Evaluation - 1,000-2,000 words)**:
+Provide comprehensive evaluation of scholarly quality:
+- Judge the adequacy, reliability, and currency of all evidence presented
+- Assess methodological soundness, research design, and analytical approaches (if applicable)
+- Identify any logical fallacies, weak reasoning, or unsupported claims
+- Evaluate overall persuasiveness, scholarly merit, and intellectual rigor
+- Assess clarity of presentation and accessibility to intended audience
+- Examine the thoroughness of research and use of sources
+- Evaluate the originality and significance of contributions made
 
-STRICT RULE: Do not mention historical background, contemporary debates, future implications, or broader academic positioning - these belong in other sections.
+Write with substantial depth and detail in each part. Provide specific examples and quotations where relevant. STRICT RULE: Do not mention historical background, contemporary debates, future implications, or broader academic positioning - these belong in other sections.
 
 ## 10 CRITICAL INSIGHTS
 
