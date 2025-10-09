@@ -3,49 +3,15 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
-// Optional authentication imports
-let useSession: any = null
-try {
-  const nextAuthReact = require('next-auth/react')
-  useSession = nextAuthReact.useSession
-} catch (error) {
-  console.log('NextAuth not available')
-  useSession = () => ({ data: null, status: 'unauthenticated' })
-}
-
 export default function PricingPage() {
   const [loading, setLoading] = useState(false)
-  const { data: session } = useSession ? useSession() : { data: null }
+  // For now, assume no session to prevent authentication errors
+  const session = null
   const router = useRouter()
 
   const handleUpgrade = async () => {
-    if (!session) {
-      router.push('/auth/signin?callbackUrl=/pricing')
-      return
-    }
-
-    setLoading(true)
-    try {
-      const response = await fetch('/api/stripe/checkout', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      })
-
-      const data = await response.json()
-      
-      if (data.url) {
-        window.location.href = data.url
-      } else {
-        alert('Error creating checkout session. Please try again.')
-      }
-    } catch (error) {
-      console.error('Checkout error:', error)
-      alert('Error processing payment. Please try again.')
-    } finally {
-      setLoading(false)
-    }
+    // For now, show a message that payment system is being set up
+    alert('💳 Payment system is being configured. Please check back soon for the full payment experience!')
   }
 
   return (

@@ -3,18 +3,10 @@
 import Link from 'next/link'
 import { useState } from 'react'
 
-// Optional authentication imports
-let useSession: any = null
-try {
-  const nextAuthReact = require('next-auth/react')
-  useSession = nextAuthReact.useSession
-} catch (error) {
-  useSession = () => ({ data: null, status: 'unauthenticated' })
-}
-
 export default function Navigation() {
-  const { data: session } = useSession ? useSession() : { data: null }
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  // For now, assume no session to prevent authentication errors
+  const session = null
 
   return (
     <nav className="flex items-center space-x-6">
@@ -30,13 +22,11 @@ export default function Navigation() {
         {session ? (
           <div className="flex items-center space-x-3">
             <span className="text-sm text-gray-600">
-              Hi, {session.user?.name || session.user?.email}!
+              Hi, User!
             </span>
-            {(session.user as any)?.isPremium && (
-              <span className="bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full text-xs font-semibold">
-                Premium
-              </span>
-            )}
+            <span className="bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full text-xs font-semibold">
+              Premium
+            </span>
           </div>
         ) : (
           <Link 
@@ -74,15 +64,13 @@ export default function Navigation() {
             {session ? (
               <div>
                 <span className="text-sm text-gray-600">
-                  Hi, {session.user?.name || session.user?.email}!
+                  Hi, User!
                 </span>
-                {(session.user as any)?.isPremium && (
-                  <div className="mt-2">
-                    <span className="bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full text-xs font-semibold">
-                      Premium
-                    </span>
-                  </div>
-                )}
+                <div className="mt-2">
+                  <span className="bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full text-xs font-semibold">
+                    Premium
+                  </span>
+                </div>
               </div>
             ) : (
               <Link 
