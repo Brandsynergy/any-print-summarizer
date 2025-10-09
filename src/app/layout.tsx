@@ -1,6 +1,8 @@
 import './globals.css'
 import type { Metadata } from 'next'
 import { Toaster } from 'react-hot-toast'
+import OptionalSessionProvider from '@/components/OptionalSessionProvider'
+import Navigation from '@/components/Navigation'
 
 export const metadata: Metadata = {
   title: 'Any Print Summarizer',
@@ -20,10 +22,12 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Comic+Neue:wght@400;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
       </head>
       <body className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 font-sans">
-        <div className="min-h-screen flex flex-col">
+        <OptionalSessionProvider>
+          <div className="min-h-screen flex flex-col">
           <header className="bg-white shadow-sm border-b-4 border-primary-200">
             <div className="max-w-6xl mx-auto px-4 py-6">
-              <div className="flex items-center justify-center space-x-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
                 <div className="bg-primary-500 text-white p-3 rounded-full">
                   <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
@@ -37,6 +41,8 @@ export default function RootLayout({
                     Turn pictures into easy summaries! 📚✨
                   </p>
                 </div>
+                </div>
+                <Navigation />
               </div>
             </div>
           </header>
@@ -52,8 +58,9 @@ export default function RootLayout({
               </p>
             </div>
           </footer>
-        </div>
-        <Toaster 
+          </div>
+        </OptionalSessionProvider>
+        <Toaster
           position="top-right"
           toastOptions={{
             duration: 4000,

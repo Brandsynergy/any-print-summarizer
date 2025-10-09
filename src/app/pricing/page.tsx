@@ -1,12 +1,21 @@
 'use client'
 
 import { useState } from 'react'
-import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+
+// Optional authentication imports
+let useSession: any = null
+try {
+  const nextAuthReact = require('next-auth/react')
+  useSession = nextAuthReact.useSession
+} catch (error) {
+  console.log('NextAuth not available')
+  useSession = () => ({ data: null, status: 'unauthenticated' })
+}
 
 export default function PricingPage() {
   const [loading, setLoading] = useState(false)
-  const { data: session } = useSession() || {}
+  const { data: session } = useSession ? useSession() : { data: null }
   const router = useRouter()
 
   const handleUpgrade = async () => {
