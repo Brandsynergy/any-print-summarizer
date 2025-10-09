@@ -3,13 +3,17 @@ import Stripe from 'stripe'
 import { getServerSession } from "next-auth/next"
 import { PrismaClient } from "@prisma/client"
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: '2025-09-30.clover'
-})
+}) : null
 
 const prisma = new PrismaClient()
 
 export async function POST(request: NextRequest) {
+  if (!stripe) {
+    return NextResponse.json({ error: 'Payment system not configured' }, { status: 503 })
+  }
+  
   try {
     const session = await getServerSession()
     

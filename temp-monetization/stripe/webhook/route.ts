@@ -2,14 +2,18 @@ import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { PrismaClient } from "@prisma/client"
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: '2025-09-30.clover'
-})
+}) : null
 
 const prisma = new PrismaClient()
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET!
 
 export async function POST(request: NextRequest) {
+  if (!stripe) {
+    return NextResponse.json({ error: 'Payment system not configured' }, { status: 503 })
+  }
+  
   try {
     const body = await request.text()
     const sig = request.headers.get('stripe-signature')!

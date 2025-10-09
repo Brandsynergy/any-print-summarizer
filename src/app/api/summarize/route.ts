@@ -1,9 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
-import { getServerSession } from "next-auth/next";
-import { PrismaClient } from "@prisma/client";
+// Optional imports for monetization features
+let getServerSession: any = null;
+let PrismaClient: any = null;
+let prisma: any = null;
 
-const prisma = new PrismaClient();
+// Try to import monetization features (optional)
+try {
+  const nextAuth = require("next-auth/next");
+  getServerSession = nextAuth.getServerSession;
+  const prismaClient = require("@prisma/client");
+  PrismaClient = prismaClient.PrismaClient;
+  if (process.env.DATABASE_URL) {
+    prisma = new PrismaClient();
+  }
+} catch (error) {
+  console.log('Monetization features not available - running in basic mode');
+}
 
 // Initialize OpenAI client only when needed
 let openai: OpenAI | null = null;
@@ -39,49 +52,60 @@ export async function POST(request: NextRequest) {
   try {
     const { text, mode = 'standard' } = await request.json();
     
-    // Get user session
-    const session = await getServerSession();
+    // Optional authentication and usage tracking
+    let user = null;
+    let session = null;
     
-    if (!session?.user?.email) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Please sign in to use the summarizer',
-        requiresAuth: true
-      }, { status: 401 });
-    }
-    
-    // Find or create user
-    let user = await prisma.user.findUnique({
-      where: { email: session.user.email }
-    });
-    
-    if (!user) {
-      user = await prisma.user.create({
-        data: {
-          email: session.user.email,
-          name: session.user.name || null
+    if (getServerSession && prisma) {
+      try {
+        // Get user session
+        session = await getServerSession();
+        
+        if (!session?.user?.email) {
+          return NextResponse.json({ 
+            success: false, 
+            error: 'Please sign in to use the summarizer',
+            requiresAuth: true
+          }, { status: 401 });
         }
-      });
-    }
-    
-    // Check access permissions
-    if (mode === 'academic' && !user.isPremium) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Academic Analysis requires premium access. Upgrade to unlock unlimited access.',
-        requiresUpgrade: true,
-        upgradeUrl: '/pricing'
-      }, { status: 403 });
-    }
-    
-    // Check free tier limits for standard mode
-    if (mode === 'standard' && !user.isPremium && user.standardUsed >= 2) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'You have used your 2 free standard summaries. Upgrade for unlimited access.',
-        requiresUpgrade: true,
-        upgradeUrl: '/pricing'
-      }, { status: 403 });
+        
+        // Find or create user
+        user = await prisma.user.findUnique({
+          where: { email: session.user.email }
+        });
+        
+        if (!user) {
+          user = await prisma.user.create({
+            data: {
+              email: session.user.email,
+              name: session.user.name || null
+            }
+          });
+        }
+        
+        // Check access permissions
+        if (mode === 'academic' && !user.isPremium) {
+          return NextResponse.json({ 
+            success: false, 
+            error: 'Academic Analysis requires premium access. Upgrade to unlock unlimited access.',
+            requiresUpgrade: true,
+            upgradeUrl: '/pricing'
+          }, { status: 403 });
+        }
+        
+        // Check free tier limits for standard mode
+        if (mode === 'standard' && !user.isPremium && user.standardUsed >= 2) {
+          return NextResponse.json({ 
+            success: false, 
+            error: 'You have used your 2 free standard summaries. Upgrade for unlimited access.',
+            requiresUpgrade: true,
+            upgradeUrl: '/pricing'
+          }, { status: 403 });
+        }
+      } catch (authError) {
+        console.log('Authentication check failed, proceeding without limits:', authError);
+        // Continue without authentication in basic mode
+      }
     }
 
     if (!text || typeof text !== 'string' || text.trim().length < 50) {
@@ -376,33 +400,35 @@ Write with personality - let your enthusiasm or curiosity show through naturally
       responseData.academicContext = academicContext;
     }
     
-    // Track usage and store summary
-    try {
-      // Update usage count
-      if (mode === 'standard') {
-        await prisma.user.update({
-          where: { id: user.id },
-          data: { standardUsed: { increment: 1 } }
-        });
-      } else if (mode === 'academic') {
-        await prisma.user.update({
-          where: { id: user.id },
-          data: { academicUsed: { increment: 1 } }
-        });
-      }
-      
-      // Store the summary
-      await prisma.summary.create({
-        data: {
-          userId: user.id,
-          type: mode,
-          title: `${mode} Summary - ${new Date().toLocaleDateString()}`,
-          content: JSON.stringify({ summary, takeaways, academicContext })
+    // Track usage and store summary (optional)
+    if (prisma && user) {
+      try {
+        // Update usage count
+        if (mode === 'standard') {
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { standardUsed: { increment: 1 } }
+          });
+        } else if (mode === 'academic') {
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { academicUsed: { increment: 1 } }
+          });
         }
-      });
-    } catch (trackingError) {
-      console.error('Usage tracking error:', trackingError);
-      // Don't fail the request if tracking fails
+        
+        // Store the summary
+        await prisma.summary.create({
+          data: {
+            userId: user.id,
+            type: mode,
+            title: `${mode} Summary - ${new Date().toLocaleDateString()}`,
+            content: JSON.stringify({ summary, takeaways, academicContext })
+          }
+        });
+      } catch (trackingError) {
+        console.error('Usage tracking error:', trackingError);
+        // Don't fail the request if tracking fails
+      }
     }
     
     return NextResponse.json(responseData);

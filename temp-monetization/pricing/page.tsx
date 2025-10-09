@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 
 export default function PricingPage() {
   const [loading, setLoading] = useState(false)
-  const { data: session } = useSession()
+  const { data: session } = useSession() || {}
   const router = useRouter()
 
   const handleUpgrade = async () => {

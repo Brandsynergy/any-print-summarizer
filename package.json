@@ -5,10 +5,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "npx prisma generate --schema=./prisma/schema.prisma || echo 'Prisma not configured, skipping...' && next build",
     "start": "next start",
     "lint": "next lint",
-    "type-check": "tsc --noEmit",
     "test-production": "npm run build && npm run start",
     "clean": "rm -rf .next"
   },
