@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
+// Updated: Enhanced academic analysis with anti-repetition - v2.0
 // Optional imports for monetization features
 let getServerSession: any = null;
 let PrismaClient: any = null;
