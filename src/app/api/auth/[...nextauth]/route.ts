@@ -18,18 +18,27 @@ const handler = NextAuth({
           return null
         }
 
-        const user = await prisma.user.findUnique({
+        // For demo purposes, allow demo123 password for any email
+        if (credentials.password !== "demo123") {
+          return null
+        }
+
+        // Find or create user
+        let user = await prisma.user.findUnique({
           where: { email: credentials.email }
         })
 
         if (!user) {
-          return null
-        }
-
-        // For now, we'll use plain text comparison
-        // In production, you'd use bcrypt.compare(credentials.password, user.password)
-        if (credentials.password !== "demo123") { // Temporary demo password
-          return null
+          // Create new user automatically
+          user = await prisma.user.create({
+            data: {
+              email: credentials.email,
+              name: credentials.email.split('@')[0], // Use email prefix as name
+              standardUsed: 0,
+              academicUsed: 0,
+              isPremium: false
+            }
+          })
         }
 
         return {

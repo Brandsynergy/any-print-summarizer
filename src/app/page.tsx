@@ -1,11 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ImageUploader } from '@/components/ImageUploader';
 import { ProcessingSteps } from '@/components/ProcessingSteps';
 import { ResultsDisplay } from '@/components/ResultsDisplay';
+import UpgradeModal from '@/components/UpgradeModal';
 import { motion } from 'framer-motion';
 import { detectBookCover, cleanBookTitle, cleanAuthorName } from '@/utils/bookDetection';
+import { useSession, signIn } from 'next-auth/react';
+import toast from 'react-hot-toast';
 
 // Image preprocessing function to improve OCR accuracy and speed
 async function preprocessImageForOCR(file: File): Promise<File> {
@@ -109,9 +112,13 @@ export interface ProcessingStep {
 }
 
 export default function HomePage() {
+  const { data: session, status } = useSession();
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [currentStep, setCurrentStep] = useState<'upload' | 'processing' | 'results'>('upload');
   const [summaryMode, setSummaryMode] = useState<SummaryMode>('standard');
+  const [userStats, setUserStats] = useState({ standardUsed: 0, academicUsed: 0, isPremium: false });
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [upgradeReason, setUpgradeReason] = useState<'usage_limit' | 'academic_mode'>('usage_limit');
   const [processingSteps, setProcessingSteps] = useState<ProcessingStep[]>([
     {
       id: 'upload',
@@ -147,7 +154,106 @@ export default function HomePage() {
   const [results, setResults] = useState<ProcessingResult | null>(null);
   const [ocrProgress, setOcrProgress] = useState<number>(0);
 
+  // Fetch user stats when session changes
+  useEffect(() => {
+    const fetchUserStats = async () => {
+      if (session?.user) {
+        try {
+          const response = await fetch('/api/user/stats');
+          const data = await response.json();
+          if (data.success) {
+            setUserStats({
+              standardUsed: data.user.standardUsed || 0,
+              academicUsed: data.user.academicUsed || 0,
+              isPremium: data.user.isPremium || false
+            });
+          }
+        } catch (error) {
+          console.error('Failed to fetch user stats:', error);
+        }
+      } else {
+        // Anonymous user - check local storage
+        const localUsage = localStorage.getItem('anonymousUsage');
+        if (localUsage) {
+          const usage = JSON.parse(localUsage);
+          setUserStats({
+            standardUsed: usage.standardUsed || 0,
+            academicUsed: usage.academicUsed || 0,
+            isPremium: false
+          });
+        }
+      }
+    };
+    
+    if (status !== 'loading') {
+      fetchUserStats();
+    }
+  }, [session, status]);
+
+  // Check if user can perform action
+  const canPerformAction = (mode: SummaryMode) => {
+    // Premium users can do anything
+    if (session && (session.user as any)?.isPremium) {
+      return { canProceed: true, reason: null };
+    }
+    
+    if (userStats.isPremium) {
+      return { canProceed: true, reason: null };
+    }
+
+    // Academic mode requires premium
+    if (mode === 'academic') {
+      return { canProceed: false, reason: 'academic_mode' as const };
+    }
+
+    // Standard mode: 2 free summaries
+    if (userStats.standardUsed >= 2) {
+      return { canProceed: false, reason: 'usage_limit' as const };
+    }
+
+    return { canProceed: true, reason: null };
+  };
+
+  // Update usage count after successful processing
+  const updateUsageCount = async (mode: SummaryMode) => {
+    if (session?.user) {
+      // Update in database
+      try {
+        await fetch('/api/user/update-usage', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mode })
+        });
+      } catch (error) {
+        console.error('Failed to update usage:', error);
+      }
+    } else {
+      // Update local storage for anonymous users
+      const localUsage = JSON.parse(localStorage.getItem('anonymousUsage') || '{}');
+      if (mode === 'standard') {
+        localUsage.standardUsed = (localUsage.standardUsed || 0) + 1;
+      } else {
+        localUsage.academicUsed = (localUsage.academicUsed || 0) + 1;
+      }
+      localStorage.setItem('anonymousUsage', JSON.stringify(localUsage));
+      setUserStats(prev => ({
+        ...prev,
+        standardUsed: localUsage.standardUsed || 0,
+        academicUsed: localUsage.academicUsed || 0
+      }));
+    }
+  };
+
   const handleFileUpload = (file: File) => {
+    // Check if user can perform this action
+    const { canProceed, reason } = canPerformAction(summaryMode);
+    
+    if (!canProceed && reason) {
+      setUpgradeReason(reason);
+      setShowUpgradeModal(true);
+      return;
+    }
+
     setUploadedFile(file);
     setCurrentStep('processing');
     startProcessing(file);
@@ -422,6 +528,12 @@ export default function HomePage() {
       updateStepStatus('summarize', 'completed');
       updateStepStatus('complete', 'completed');
       
+      // Update usage count after successful processing
+      await updateUsageCount(summaryMode);
+      
+      // Show success message
+      toast.success(`${summaryMode === 'academic' ? 'Academic analysis' : 'Summary'} completed successfully!`);
+      
       setResults(finalResults);
       setCurrentStep('results');
       
@@ -493,16 +605,32 @@ export default function HomePage() {
                   <div className="text-xs opacity-75">Up to 2,000 words</div>
                 </button>
                 <button
-                  onClick={() => setSummaryMode('academic')}
-                  className={`flex-1 py-3 px-4 rounded-xl font-comic font-semibold transition-all duration-200 ${
+                  onClick={() => {
+                    if (canPerformAction('academic').canProceed) {
+                      setSummaryMode('academic');
+                    } else {
+                      setUpgradeReason('academic_mode');
+                      setShowUpgradeModal(true);
+                    }
+                  }}
+                  className={`flex-1 py-3 px-4 rounded-xl font-comic font-semibold transition-all duration-200 relative ${
                     summaryMode === 'academic'
                       ? 'bg-purple-500 text-white shadow-lg transform scale-105'
-                      : 'bg-purple-100 text-purple-700 hover:bg-purple-200'
+                      : canPerformAction('academic').canProceed
+                      ? 'bg-purple-100 text-purple-700 hover:bg-purple-200'
+                      : 'bg-gradient-to-r from-purple-100 to-yellow-100 text-purple-700 hover:from-purple-200 hover:to-yellow-200 border-2 border-yellow-300'
                   }`}
                 >
+                  {!canPerformAction('academic').canProceed && (
+                    <div className="absolute -top-1 -right-1 bg-yellow-500 text-yellow-900 rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
+                      💎
+                    </div>
+                  )}
                   <div className="text-2xl mb-1">🎓</div>
                   <div className="text-sm">Academic</div>
-                  <div className="text-xs opacity-75">Up to 10,000 words</div>
+                  <div className="text-xs opacity-75">
+                    {canPerformAction('academic').canProceed ? 'Up to 10,000 words' : 'Premium Only'}
+                  </div>
                 </button>
               </div>
               <div className="mt-4 text-center">
@@ -511,6 +639,47 @@ export default function HomePage() {
                     ? 'Perfect for quick understanding and general reading 📖' 
                     : 'Detailed analysis for research, studying, and in-depth learning 📚'}
                 </p>
+                
+                {/* Usage Counter */}
+                {!session && (
+                  <div className="mt-2 text-center">
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 inline-block">
+                      <p className="text-xs text-blue-700 font-bold font-comic">
+                        📊 Free Usage: {userStats.standardUsed}/2 summaries used
+                      </p>
+                      {userStats.standardUsed >= 1 && (
+                        <p className="text-xs text-blue-600 font-comic mt-1">
+                          💡 Sign in to track your usage and get premium features!
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+                
+                {session && !(session.user as any)?.isPremium && (
+                  <div className="mt-2 text-center">
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 inline-block">
+                      <p className="text-xs text-amber-700 font-bold font-comic">
+                        📊 Free Usage: {userStats.standardUsed}/2 summaries used
+                      </p>
+                      {userStats.standardUsed >= 1 && (
+                        <p className="text-xs text-amber-600 font-comic mt-1">
+                          🚀 Upgrade to Premium for unlimited access!
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+                
+                {session && (session.user as any)?.isPremium && (
+                  <div className="mt-2 text-center">
+                    <div className="bg-green-50 border border-green-200 rounded-lg px-3 py-2 inline-block">
+                      <p className="text-xs text-green-700 font-bold font-comic">
+                        ⭐ Premium User - Unlimited Access!
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </motion.div>
@@ -591,6 +760,14 @@ export default function HomePage() {
             </div>
           </motion.div>
         )}
+        
+        {/* Upgrade Modal */}
+        <UpgradeModal
+          isOpen={showUpgradeModal}
+          onClose={() => setShowUpgradeModal(false)}
+          reason={upgradeReason}
+          usedCount={userStats.standardUsed}
+        />
       </div>
     </div>
   );

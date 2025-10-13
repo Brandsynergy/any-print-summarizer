@@ -2,11 +2,11 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
+import { useSession, signOut } from 'next-auth/react'
 
 export default function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  // For now, assume no session to prevent authentication errors
-  const session = null
+  const { data: session, status } = useSession()
 
   return (
     <nav className="flex items-center space-x-6">
@@ -22,11 +22,26 @@ export default function Navigation() {
         {session ? (
           <div className="flex items-center space-x-3">
             <span className="text-sm text-gray-600">
-              Hi, User!
+              Hi, {session.user?.name || session.user?.email?.split('@')[0] || 'User'}!
             </span>
-            <span className="bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full text-xs font-semibold">
-              Premium
-            </span>
+            {(session.user as any)?.isPremium ? (
+              <span className="bg-gradient-to-r from-yellow-400 to-yellow-500 text-yellow-900 px-3 py-1 rounded-full text-xs font-bold">
+                ⭐ Premium
+              </span>
+            ) : (
+              <Link 
+                href="/pricing"
+                className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white px-3 py-1 rounded-full text-xs font-bold transition-all duration-200"
+              >
+                🚀 Upgrade
+              </Link>
+            )}
+            <button
+              onClick={() => signOut()}
+              className="text-gray-500 hover:text-gray-700 text-sm transition-colors"
+            >
+              Sign Out
+            </button>
           </div>
         ) : (
           <Link 
@@ -62,14 +77,33 @@ export default function Navigation() {
               💎 Pricing
             </Link>
             {session ? (
-              <div>
-                <span className="text-sm text-gray-600">
-                  Hi, User!
+              <div className="space-y-2">
+                <span className="text-sm text-gray-600 block">
+                  Hi, {session.user?.name || session.user?.email?.split('@')[0] || 'User'}!
                 </span>
-                <div className="mt-2">
-                  <span className="bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full text-xs font-semibold">
-                    Premium
-                  </span>
+                <div className="flex items-center justify-between">
+                  {(session.user as any)?.isPremium ? (
+                    <span className="bg-gradient-to-r from-yellow-400 to-yellow-500 text-yellow-900 px-3 py-1 rounded-full text-xs font-bold">
+                      ⭐ Premium
+                    </span>
+                  ) : (
+                    <Link 
+                      href="/pricing"
+                      className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white px-3 py-1 rounded-full text-xs font-bold"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      🚀 Upgrade
+                    </Link>
+                  )}
+                  <button
+                    onClick={() => {
+                      signOut()
+                      setIsMenuOpen(false)
+                    }}
+                    className="text-gray-500 hover:text-gray-700 text-sm"
+                  >
+                    Sign Out
+                  </button>
                 </div>
               </div>
             ) : (

@@ -3,8 +3,8 @@ services:
     name: any-print-summarizer
     runtime: node
     plan: starter
-    buildCommand: npm install && npm run build
-    startCommand: npm start
+    buildCommand: npm install && npx prisma generate && npm run build
+    startCommand: npx prisma migrate deploy && npm start
     healthCheckPath: /
     envVars:
       - key: NODE_ENV
@@ -18,4 +18,22 @@ services:
           type: web
           name: any-print-summarizer
           property: host
+      # Database Configuration
+      - key: DATABASE_URL
+        sync: false # Set this in Render dashboard - PostgreSQL connection string
+      # NextAuth Configuration
+      - key: NEXTAUTH_SECRET
+        sync: false # Set this in Render dashboard - random secret key
+      - key: NEXTAUTH_URL
+        fromService:
+          type: web
+          name: any-print-summarizer
+          property: host
+      # Stripe Configuration
+      - key: STRIPE_SECRET_KEY
+        sync: false # Set this in Render dashboard - sk_live_...
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false # Set this in Render dashboard - whsec_...
+      - key: NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+        sync: false # Set this in Render dashboard - pk_live_...
     autoDeploy: true
