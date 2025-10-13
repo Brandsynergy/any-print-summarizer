@@ -14,7 +14,8 @@ interface UpgradeModalProps {
 
 export default function UpgradeModal({ isOpen, onClose, reason, usedCount = 0 }: UpgradeModalProps) {
   const [isProcessing, setIsProcessing] = useState(false)
-  const { data: session } = useSession()
+  const sessionResult = useSession()
+  const session = sessionResult?.data
 
   const handleUpgrade = async () => {
     if (!session) {

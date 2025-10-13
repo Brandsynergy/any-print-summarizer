@@ -112,7 +112,9 @@ export interface ProcessingStep {
 }
 
 export default function HomePage() {
-  const { data: session, status } = useSession();
+  const sessionResult = useSession();
+  const session = sessionResult?.data;
+  const status = sessionResult?.status || 'loading';
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [currentStep, setCurrentStep] = useState<'upload' | 'processing' | 'results'>('upload');
   const [summaryMode, setSummaryMode] = useState<SummaryMode>('standard');

@@ -12,8 +12,10 @@ export default function SuccessPage() {
   const [error, setError] = useState('')
   const searchParams = useSearchParams()
   const router = useRouter()
-  const { data: session, update } = useSession()
-  const sessionId = searchParams.get('session_id')
+  const sessionResult = useSession()
+  const session = sessionResult?.data
+  const update = sessionResult?.update
+  const sessionId = searchParams?.get('session_id')
 
   useEffect(() => {
     const verifyPayment = async () => {

@@ -6,7 +6,9 @@ import { useSession, signOut } from 'next-auth/react'
 
 export default function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const { data: session, status } = useSession()
+  const sessionResult = useSession()
+  const session = sessionResult?.data
+  const status = sessionResult?.status || 'loading'
 
   return (
     <nav className="flex items-center space-x-6">
