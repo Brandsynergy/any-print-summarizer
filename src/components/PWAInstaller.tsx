@@ -24,27 +24,11 @@ export default function PWAInstaller() {
   const [isInstalled, setIsInstalled] = useState(false)
   const [isIOS, setIsIOS] = useState(false)
   const [isStandalone, setIsStandalone] = useState(false)
-  const [showManualInstall, setShowManualInstall] = useState(false)
-  const [isDesktop, setIsDesktop] = useState(false)
-  const [browserType, setBrowserType] = useState('')
 
   useEffect(() => {
     // Check if running on iOS
     const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
     setIsIOS(iOS)
-
-    // Detect desktop vs mobile
-    const desktop = !(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent))
-    setIsDesktop(desktop)
-
-    // Detect browser type
-    const userAgent = navigator.userAgent
-    let browser = ''
-    if (userAgent.includes('Chrome') && !userAgent.includes('Edg')) browser = 'Chrome'
-    else if (userAgent.includes('Edg')) browser = 'Edge'
-    else if (userAgent.includes('Firefox')) browser = 'Firefox'
-    else if (userAgent.includes('Safari') && !userAgent.includes('Chrome')) browser = 'Safari'
-    setBrowserType(browser)
 
     // Check if app is running in standalone mode
     const standalone = window.matchMedia('(display-mode: standalone)').matches ||
@@ -79,22 +63,9 @@ export default function PWAInstaller() {
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
     window.addEventListener('appinstalled', handleAppInstalled)
 
-    // If no beforeinstallprompt event fires after 5 seconds on desktop, show manual instructions
-    let manualInstallTimeout: NodeJS.Timeout | null = null
-    
-    if (desktop && !iOS && (browser === 'Chrome' || browser === 'Edge')) {
-      manualInstallTimeout = setTimeout(() => {
-        if (!deferredPrompt && !standalone) {
-          console.log('PWA: beforeinstallprompt not fired, showing manual install instructions')
-          setShowManualInstall(true)
-        }
-      }, 5000)
-    }
-
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
       window.removeEventListener('appinstalled', handleAppInstalled)
-      if (manualInstallTimeout) clearTimeout(manualInstallTimeout)
     }
   }, [])
 
@@ -118,99 +89,14 @@ export default function PWAInstaller() {
     }
   }
 
-  const dismissManualBanner = () => {
-    setShowManualInstall(false)
-    sessionStorage.setItem('pwa-manual-dismissed', 'true')
-  }
-
   // Don't show if already installed or dismissed this session
-  if (isInstalled || isStandalone) {
+  if (isInstalled || isStandalone || (typeof window !== 'undefined' && sessionStorage.getItem('pwa-banner-dismissed'))) {
     return null
-  }
-  
-  // Don't show manual install if already dismissed
-  if (showManualInstall && sessionStorage.getItem('pwa-manual-dismissed')) {
-    setShowManualInstall(false)
-    return null
-  }
-  
-  // Don't show regular banner if dismissed
-  if (showInstallBanner && sessionStorage.getItem('pwa-banner-dismissed')) {
-    setShowInstallBanner(false)
   }
 
   return (
     <>
-      {/* Manual Install Banner for Desktop */}
-      <AnimatePresence>
-        {showManualInstall && isDesktop && (
-          <motion.div
-            initial={{ y: 100, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 100, opacity: 0 }}
-            className="fixed bottom-4 left-4 right-4 z-50 md:left-auto md:right-4 md:w-96"
-          >
-            <div className="bg-gradient-to-r from-green-500 to-blue-500 rounded-2xl shadow-2xl p-4 text-white border border-white/20">
-              <div className="flex items-start gap-3">
-                <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
-                    <span className="text-lg font-bold text-blue-500">📱</span>
-                  </div>
-                </div>
-                
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-bold text-sm mb-1 font-comic">
-                    Install AEYE Summarizer
-                  </h3>
-                  <p className="text-xs text-green-100 font-comic mb-3">
-                    Install as an app for faster access! 🚀
-                  </p>
-                  
-                  {browserType === 'Chrome' && (
-                    <div className="text-xs text-green-100 font-comic mb-3">
-                      <p className="font-bold mb-1">Chrome: Look for the install icon</p>
-                      <p>📱 In the address bar, or</p>
-                      <p>⋮ Menu → "Install Any Print Summarizer"</p>
-                    </div>
-                  )}
-                  
-                  {browserType === 'Edge' && (
-                    <div className="text-xs text-green-100 font-comic mb-3">
-                      <p className="font-bold mb-1">Edge: Install from menu</p>
-                      <p>⋯ Menu → Apps → "Install this site as an app"</p>
-                    </div>
-                  )}
-                  
-                  <div className="flex gap-2">
-                    <button
-                      onClick={dismissManualBanner}
-                      className="bg-white text-green-600 px-4 py-2 rounded-lg text-xs font-bold font-comic hover:bg-green-50 transition-colors"
-                    >
-                      Got it!
-                    </button>
-                    
-                    <button
-                      onClick={dismissManualBanner}
-                      className="text-white/80 hover:text-white text-xs p-2 font-comic"
-                    >
-                      Maybe later
-                    </button>
-                  </div>
-                </div>
-                
-                <button
-                  onClick={dismissManualBanner}
-                  className="text-white/60 hover:text-white p-1 text-lg"
-                >
-                  ×
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-      
-      {/* Automatic Install Banner */}
+      {/* Install Banner */}
       <AnimatePresence>
         {showInstallBanner && (
           <motion.div
