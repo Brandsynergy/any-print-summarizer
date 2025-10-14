@@ -53,28 +53,17 @@ export const metadata: Metadata = {
     { media: '(prefers-color-scheme: light)', color: '#3B82F6' },
     { media: '(prefers-color-scheme: dark)', color: '#1E40AF' },
   ],
-  manifest: '/manifest.json',
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: 'default',
-    title: 'AEYE Summarizer',
-    startupImage: [
-      {
-        url: '/icons/icon-512x512.png',
-        media: '(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)',
-      },
-    ],
-  },
-  other: {
-    'mobile-web-app-capable': 'yes',
-    'apple-mobile-web-app-capable': 'yes',
-    'apple-mobile-web-app-status-bar-style': 'default',
-    'apple-mobile-web-app-title': 'AEYE Summarizer',
-    'application-name': 'AEYE Summarizer',
-    'msapplication-TileColor': '#3B82F6',
-    'msapplication-TileImage': '/icons/icon-144x144.png',
-    'msapplication-config': '/browserconfig.xml',
-  },
+  // manifest: '/manifest.json', // DISABLED - no more PWA
+  // PWA METADATA DISABLED - no more install prompts
+  // appleWebApp: {
+  //   capable: true,
+  //   statusBarStyle: 'default',
+  //   title: 'AEYE Summarizer',
+  // },
+  // other: {
+  //   'mobile-web-app-capable': 'yes',
+  //   'apple-mobile-web-app-capable': 'yes',
+  // },
 }
 
 export default function RootLayout({
@@ -95,8 +84,8 @@ export default function RootLayout({
         <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
         <link rel="mask-icon" href="/icons/icon-512x512.png" color="#3B82F6" />
         
-        {/* Service Worker Registration */}
-        <script dangerouslySetInnerHTML={{
+        {/* Service Worker Registration DISABLED - no more PWA prompts */}
+        {/* <script dangerouslySetInnerHTML={{
           __html: `
             if ('serviceWorker' in navigator) {
               window.addEventListener('load', function() {
@@ -110,7 +99,7 @@ export default function RootLayout({
               });
             }
           `
-        }} />
+        }} /> */}
       </head>
       <body className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 font-sans">
         <OptionalSessionProvider>
