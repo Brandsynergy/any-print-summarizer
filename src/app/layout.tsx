@@ -3,7 +3,6 @@ import type { Metadata } from 'next'
 import { Toaster } from 'react-hot-toast'
 import OptionalSessionProvider from '@/components/OptionalSessionProvider'
 import Navigation from '@/components/Navigation'
-import PWAInstaller from '@/components/PWAInstaller'
 
 export const metadata: Metadata = {
   title: 'Any Print Summarizer - AEYE.NG',
@@ -154,7 +153,6 @@ export default function RootLayout({
           </footer>
           </div>
         </OptionalSessionProvider>
-        <PWAInstaller />
         <Toaster
           position="top-right"
           toastOptions={{
