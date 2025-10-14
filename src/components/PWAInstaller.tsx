@@ -24,8 +24,18 @@ export default function PWAInstaller() {
   const [isInstalled, setIsInstalled] = useState(false)
   const [isIOS, setIsIOS] = useState(false)
   const [isStandalone, setIsStandalone] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
 
   useEffect(() => {
+    // Check if running on mobile device
+    const mobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+    setIsMobile(mobile)
+    
+    // COMPLETELY DISABLE PWA installer on desktop
+    if (!mobile) {
+      return
+    }
+    
     // Check if running on iOS
     const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
     setIsIOS(iOS)
@@ -89,6 +99,11 @@ export default function PWAInstaller() {
     }
   }
 
+  // Don't show if not mobile (desktop computers)
+  if (!isMobile) {
+    return null
+  }
+  
   // Don't show if already installed or dismissed this session
   if (isInstalled || isStandalone || (typeof window !== 'undefined' && sessionStorage.getItem('pwa-banner-dismissed'))) {
     return null
