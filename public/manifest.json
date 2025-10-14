@@ -1,9 +1,0 @@
-{
-  "disabled": true,
-  "note": "PWA functionality has been intentionally disabled to prevent install prompts",
-  "name": "Any Print Summarizer - AEYE.NG (Web Only)",
-  "description": "AI-powered app that transforms any printed content into easy summaries with just a photo",
-  "display": "browser",
-  "background_color": "#ffffff",
-  "theme_color": "#3B82F6"
-}

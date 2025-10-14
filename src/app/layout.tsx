@@ -25,22 +25,13 @@ export const metadata: Metadata = {
     description: 'Transform any printed content into easy summaries with just a photo',
     url: '/',
     siteName: 'Any Print Summarizer',
-    images: [
-      {
-        url: '/icons/icon-512x512.png',
-        width: 512,
-        height: 512,
-        alt: 'Any Print Summarizer Logo',
-      },
-    ],
     locale: 'en_US',
     type: 'website',
   },
   twitter: {
-    card: 'summary_large_image',
+    card: 'summary',
     title: 'Any Print Summarizer - AEYE.NG',
     description: 'Transform any printed content into easy summaries with just a photo',
-    images: ['/icons/icon-512x512.png'],
     creator: '@aeye_ng',
   },
   viewport: {
@@ -78,28 +69,12 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Comic+Neue:wght@400;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
         
-        {/* PWA Icons */}
-        <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png" />
-        <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png" />
-        <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
-        <link rel="mask-icon" href="/icons/icon-512x512.png" color="#3B82F6" />
-        
-        {/* Service Worker Registration DISABLED - no more PWA prompts */}
-        {/* <script dangerouslySetInnerHTML={{
-          __html: `
-            if ('serviceWorker' in navigator) {
-              window.addEventListener('load', function() {
-                navigator.serviceWorker.register('/sw.js')
-                  .then(function(registration) {
-                    console.log('SW registered: ', registration);
-                  })
-                  .catch(function(registrationError) {
-                    console.log('SW registration failed: ', registrationError);
-                  });
-              });
-            }
-          `
-        }} /> */}
+        {/* Cache-busting meta tags to clear PWA cache */}
+        <meta httpEquiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+        <meta httpEquiv="Pragma" content="no-cache" />
+        <meta httpEquiv="Expires" content="0" />
+        <meta name="mobile-web-app-capable" content="no" />
+        <meta name="apple-mobile-web-app-capable" content="no" />
       </head>
       <body className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 font-sans">
         <OptionalSessionProvider>
