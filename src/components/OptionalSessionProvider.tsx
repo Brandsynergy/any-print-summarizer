@@ -1,13 +1,16 @@
 'use client'
 
 import React from 'react'
+import { SessionProvider } from 'next-auth/react'
 
 export default function OptionalSessionProvider({
   children,
 }: {
   children: React.ReactNode
 }) {
-  // For now, just return children without session provider
-  // This prevents any authentication-related errors during deployment
-  return <>{children}</>
+  return (
+    <SessionProvider>
+      {children}
+    </SessionProvider>
+  )
 }
