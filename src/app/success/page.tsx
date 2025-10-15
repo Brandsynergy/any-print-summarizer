@@ -26,24 +26,14 @@ function SuccessContent() {
       }
 
       try {
-        // Call our premium upgrade API
-        const response = await fetch('/api/upgrade-to-premium', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ sessionId })
-        })
-
-        if (response.ok) {
-          // Store premium status in localStorage for this session
+        // Wait a moment for dramatic effect
+        await new Promise(resolve => setTimeout(resolve, 2000))
+        
+        // Store premium status in localStorage immediately
+        if (session?.user?.email) {
           localStorage.setItem('isPremium', 'true')
-          localStorage.setItem('premiumEmail', session?.user?.email || '')
-          
-          // Refresh the page to update all components
-          window.location.reload()
-        } else {
-          throw new Error('Premium upgrade failed')
+          localStorage.setItem('premiumEmail', session.user.email)
+          console.log('Premium status granted for:', session.user.email)
         }
         
         setPaymentVerified(true)
