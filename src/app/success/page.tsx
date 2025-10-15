@@ -26,11 +26,25 @@ function SuccessContent() {
       }
 
       try {
-        // Wait a moment for webhooks to process
-        await new Promise(resolve => setTimeout(resolve, 2000))
-        
-        // Refresh session to get updated premium status
-        await update()
+        // Call our premium upgrade API
+        const response = await fetch('/api/upgrade-to-premium', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ sessionId })
+        })
+
+        if (response.ok) {
+          // Store premium status in localStorage for this session
+          localStorage.setItem('isPremium', 'true')
+          localStorage.setItem('premiumEmail', session?.user?.email || '')
+          
+          // Refresh the page to update all components
+          window.location.reload()
+        } else {
+          throw new Error('Premium upgrade failed')
+        }
         
         setPaymentVerified(true)
       } catch (error) {
@@ -42,7 +56,7 @@ function SuccessContent() {
     }
 
     verifyPayment()
-  }, [sessionId, update])
+  }, [sessionId, session])
 
   if (isVerifying) {
     return (

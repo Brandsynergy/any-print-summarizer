@@ -1,14 +1,33 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 
 export default function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isPremiumLocal, setIsPremiumLocal] = useState(false)
   const sessionResult = useSession()
   const session = sessionResult?.data
   const status = sessionResult?.status || 'loading'
+  
+  // Check localStorage for premium status
+  useEffect(() => {
+    const checkPremiumStatus = () => {
+      const premiumStatus = localStorage.getItem('isPremium')
+      const premiumEmail = localStorage.getItem('premiumEmail')
+      const currentEmail = session?.user?.email
+      
+      if (premiumStatus === 'true' && premiumEmail === currentEmail) {
+        setIsPremiumLocal(true)
+      }
+    }
+    
+    checkPremiumStatus()
+  }, [session])
+  
+  // Combined premium status from session and localStorage
+  const isPremium = (session?.user as any)?.isPremium || isPremiumLocal
 
   return (
     <nav className="flex items-center space-x-6">
@@ -26,7 +45,7 @@ export default function Navigation() {
             <span className="text-sm text-gray-600">
               Hi, {session.user?.name || session.user?.email?.split('@')[0] || 'User'}!
             </span>
-            {(session.user as any)?.isPremium ? (
+            {isPremium ? (
               <span className="bg-gradient-to-r from-yellow-400 to-yellow-500 text-yellow-900 px-3 py-1 rounded-full text-xs font-bold">
                 ⭐ Premium
               </span>
@@ -84,7 +103,7 @@ export default function Navigation() {
                   Hi, {session.user?.name || session.user?.email?.split('@')[0] || 'User'}!
                 </span>
                 <div className="flex items-center justify-between">
-                  {(session.user as any)?.isPremium ? (
+                  {isPremium ? (
                     <span className="bg-gradient-to-r from-yellow-400 to-yellow-500 text-yellow-900 px-3 py-1 rounded-full text-xs font-bold">
                       ⭐ Premium
                     </span>

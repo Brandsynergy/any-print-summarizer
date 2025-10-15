@@ -119,6 +119,7 @@ export default function HomePage() {
   const [currentStep, setCurrentStep] = useState<'upload' | 'processing' | 'results'>('upload');
   const [summaryMode, setSummaryMode] = useState<SummaryMode>('standard');
   const [userStats, setUserStats] = useState({ standardUsed: 0, academicUsed: 0, isPremium: false });
+  const [isPremiumLocal, setIsPremiumLocal] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [upgradeReason, setUpgradeReason] = useState<'usage_limit' | 'academic_mode'>('usage_limit');
   const [processingSteps, setProcessingSteps] = useState<ProcessingStep[]>([
@@ -155,6 +156,24 @@ export default function HomePage() {
   ]);
   const [results, setResults] = useState<ProcessingResult | null>(null);
   const [ocrProgress, setOcrProgress] = useState<number>(0);
+
+  // Check localStorage for premium status
+  useEffect(() => {
+    const checkPremiumStatus = () => {
+      const premiumStatus = localStorage.getItem('isPremium')
+      const premiumEmail = localStorage.getItem('premiumEmail')
+      const currentEmail = session?.user?.email
+      
+      if (premiumStatus === 'true' && premiumEmail === currentEmail) {
+        setIsPremiumLocal(true)
+      }
+    }
+    
+    checkPremiumStatus()
+  }, [session])
+
+  // Combined premium status
+  const isPremium = (session?.user as any)?.isPremium || isPremiumLocal
 
   // Fetch user stats when session changes
   useEffect(() => {
@@ -195,7 +214,7 @@ export default function HomePage() {
   // Check if user can perform action
   const canPerformAction = (mode: SummaryMode) => {
     // Premium users can do anything
-    if (session && (session.user as any)?.isPremium) {
+    if (session && isPremium) {
       return { canProceed: true, reason: null };
     }
     
