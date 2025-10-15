@@ -166,6 +166,8 @@ export default function HomePage() {
       
       if (premiumStatus === 'true' && premiumEmail === currentEmail) {
         setIsPremiumLocal(true)
+        // Also update userStats to reflect premium status
+        setUserStats(prev => ({ ...prev, isPremium: true }))
       }
     }
     
@@ -678,7 +680,7 @@ export default function HomePage() {
                   </div>
                 )}
                 
-                {session && !(session.user as any)?.isPremium && (
+                {session && !isPremium && (
                   <div className="mt-2 text-center">
                     <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 inline-block">
                       <p className="text-xs text-amber-700 font-bold font-comic">
@@ -693,7 +695,7 @@ export default function HomePage() {
                   </div>
                 )}
                 
-                {session && (session.user as any)?.isPremium && (
+                {session && isPremium && (
                   <div className="mt-2 text-center">
                     <div className="bg-green-50 border border-green-200 rounded-lg px-3 py-2 inline-block">
                       <p className="text-xs text-green-700 font-bold font-comic">
