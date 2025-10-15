@@ -53,59 +53,30 @@ export async function POST(request: NextRequest) {
   try {
     const { text, mode = 'standard' } = await request.json();
     
-    // Optional authentication and usage tracking
+    // Simplified authentication - no premium restrictions 
+    // All restrictions handled on client side
     let user = null;
     let session = null;
     
     if (getServerSession && prisma) {
       try {
-        // Get user session
+        // Get user session (optional)
         session = await getServerSession();
         
-        if (!session?.user?.email) {
-          return NextResponse.json({ 
-            success: false, 
-            error: 'Please sign in to use the summarizer',
-            requiresAuth: true
-          }, { status: 401 });
-        }
-        
-        // Find or create user
-        user = await prisma.user.findUnique({
-          where: { email: session.user.email }
-        });
-        
-        if (!user) {
-          user = await prisma.user.create({
-            data: {
-              email: session.user.email,
-              name: session.user.name || null
-            }
+        if (session?.user?.email) {
+          // Find or create user (optional)
+          user = await prisma.user.findUnique({
+            where: { email: session.user.email }
           });
-        }
-        
-        // Check access permissions - modified for localStorage premium support
-        // For academic mode, we'll check if the request includes premium status
-        const requestHeaders = request.headers;
-        const isPremiumFromClient = requestHeaders.get('x-is-premium') === 'true';
-        
-        if (mode === 'academic' && !user.isPremium && !isPremiumFromClient) {
-          return NextResponse.json({ 
-            success: false, 
-            error: 'Academic Analysis requires premium access. Upgrade to unlock unlimited access.',
-            requiresUpgrade: true,
-            upgradeUrl: '/pricing'
-          }, { status: 403 });
-        }
-        
-        // Check free tier limits for standard mode
-        if (mode === 'standard' && !user.isPremium && user.standardUsed >= 2) {
-          return NextResponse.json({ 
-            success: false, 
-            error: 'You have used your 2 free standard summaries. Upgrade for unlimited access.',
-            requiresUpgrade: true,
-            upgradeUrl: '/pricing'
-          }, { status: 403 });
+          
+          if (!user) {
+            user = await prisma.user.create({
+              data: {
+                email: session.user.email,
+                name: session.user.name || null
+              }
+            });
+          }
         }
       } catch (authError) {
         console.log('Authentication check failed, proceeding without limits:', authError);
