@@ -84,8 +84,12 @@ export async function POST(request: NextRequest) {
           });
         }
         
-        // Check access permissions
-        if (mode === 'academic' && !user.isPremium) {
+        // Check access permissions - modified for localStorage premium support
+        // For academic mode, we'll check if the request includes premium status
+        const requestHeaders = request.headers;
+        const isPremiumFromClient = requestHeaders.get('x-is-premium') === 'true';
+        
+        if (mode === 'academic' && !user.isPremium && !isPremiumFromClient) {
           return NextResponse.json({ 
             success: false, 
             error: 'Academic Analysis requires premium access. Upgrade to unlock unlimited access.',

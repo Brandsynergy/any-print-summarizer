@@ -524,6 +524,7 @@ export default function HomePage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'x-is-premium': isPremium ? 'true' : 'false',
         },
         body: JSON.stringify({ 
           text: finalText, 
